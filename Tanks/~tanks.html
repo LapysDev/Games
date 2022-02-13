@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- Document Stylesheet -->
+    <style media=all type=text/css>
+      /* DOM Elements */
+      body, html {
+        height: 100%;
+        margin: 0;
+        width: 100%
+      }
+
+      /* Components */
+      #canvas {
+        background-color: #000000;
+        height: 100%;
+        width: 100%
+      }
+    </style>
+
+    <!-- Document Title -->
+    <title> Tanks </title>
+  </head>
+
+  <body>
+    <canvas id=canvas> </canvas>
+
+    <!-- Document Script -->
+    <script language=javascript type=text/javascript>
+      // ;(function Main() {
+        /* Global */
+        var DISPLAY_CANVAS  = canvas;
+        var DISPLAY_CONTEXT = DISPLAY_CANVAS.getContext("2d", {alpha: false, desynchronized: true});
+        var GLOBAL          = "undefined" === typeof frames ? ("undefined" === typeof self ? ("undefined" === typeof window ? ("undefined" === typeof global ? ("undefined" === typeof globalThis ? (function() { return this })() : globalThis) : global) : window) : self) : frames;
+        var MEMORY_CANVAS   = GLOBAL.document.createElement("canvas");
+        var MEMORY_CONTEXT  = MEMORY_CANVAS.getContext("2d", {alpha: false, desynchronized: true});
+        var TITLE           = GLOBAL.document.title;
+
+        /* Class > ... */
+        function TextLayout() {
+          this.contents = [""];
+          this.widths   = [0]
+        }
+          TextLayout.prototype = {
+            contents: [],
+            widths  : []
+          };
+
+        function Style(source) {
+          var value = Style.prototype["[[Maximum]]"] ^ 1073741824 ? Style.prototype["[[Maximum]]"] <<= 1 : Style.prototype["[[Maximum]]"] = 1;
+
+          this.toString = arguments.length ? function toString() { return source } : Style.prototype.toString;
+          this.valueOf  = function valueOf() { return value }
+        }
+          Style.prototype = {
+            toString: function toString() { return "" },
+            valueOf : function valueOf () { return 0x0 },
+
+            "[[Maximum]]": 1
+          };
+
+          // ...
+          var Styles = {
+            ABSOLUTE       : new Style(),
+            AUTO           : new Style("auto"),
+            BLOCK          : new Style(),
+            BOLD           : new Style("bold"),
+            BOLDER         : new Style("bolder"),
+            BOTTOM         : new Style("bottom"),
+            CENTER         : new Style(),
+            CONDENSED      : new Style("condensed"),
+            CURSIVE        : new Style("cursive"),
+            EASE           : new Style(),
+            EASE_IN        : new Style(),
+            EASE_IN_OUT    : new Style(),
+            EASE_OUT       : new Style(),
+            ELLIPSIS       : new Style(" …"),
+            EMOJI          : new Style("emoji"),
+            EXPANDED       : new Style("expanded"),
+            EXTRA_CONDENSED: new Style("extra-condensed"),
+            EXTRA_EXPANDED : new Style("extra-expanded"),
+            FANGSONG       : new Style("fangsong"),
+            FANTASY        : new Style("fantasy"),
+            FILL           : new Style(),
+            FIT            : new Style(),
+            FIXED          : new Style(),
+            HORIZONTAL     : new Style(),
+            INLINE         : new Style(),
+            ITALIC         : new Style("italic"),
+            JUSTIFY        : new Style("justify"),
+            LEFT           : new Style("left"),
+            LIGHTER        : new Style("lighter"),
+            LINEAR         : new Style(),
+            MATH           : new Style("math"),
+            MONOSPACE      : new Style("monospace"),
+            NONE           : new Style(),
+            NORMAL         : new Style("normal"),
+            OBLIQUE        : new Style("oblique"),
+            OVERLINE       : new Style("overline"),
+            POINTER        : new Style("pointer"),
+            PRE            : new Style(),
+            RELATIVE       : new Style(),
+            RIGHT          : new Style("right"),
+            SANS_SERIF     : new Style("sans-serif"),
+            SANS_SERIF     : new Style("sans-serif"),
+            SEMI_CONDENSED : new Style("semi-condensed"),
+            SEMI_EXPANDED  : new Style("semi-expanded"),
+            SERIF          : new Style("serif"),
+            SYSTEM_UI      : new Style("system-ui"),
+            TEXT           : new Style("text"),
+            TOP            : new Style("top"),
+            UI_MONOSPACE   : new Style("ui-monospace"),
+            UI_ROUNDED     : new Style("ui-rounded"),
+            UI_SANS_SERIF  : new Style("ui-sans-serif"),
+            UI_SERIF       : new Style("ui-serif"),
+            ULTRA_CONDENSED: new Style("ultra-condensed"),
+            ULTRA_EXPANDED : new Style("ultra-expanded"),
+            UNDERLINE      : new Style("underline"),
+            VERTICAL       : new Style()
+          };
+
+        // ...
+        function StyleMap() {
+          this.background = {color: StyleMap.prototype.background.color, image: StyleMap.prototype.background.image, position: StyleMap.prototype.background.position, x: StyleMap.prototype.background.x, y: StyleMap.prototype.background.y};
+          this.border     = new Bounds(new Border(), new Border(), new Border(), new Border());
+          this.caret      = {color: StyleMap.prototype.caret.color, width: StyleMap.prototype.caret.width};
+          this.margin     = new Bounds(0, 0, 0, 0);
+          this.padding    = new Bounds(0, 0, 0, 0);
+          this.scroll     = {left: StyleMap.prototype.scroll.left, style: StyleMap.prototype.scroll.style, top: StyleMap.prototype.scroll.top};
+          this.shadow     = {blur: StyleMap.prototype.shadow.blur, color: StyleMap.prototype.shadow.color, left: StyleMap.prototype.shadow.left, top: StyleMap.prototype.shadow.top};
+          this.text       = {align: StyleMap.prototype.text.align, color: StyleMap.prototype.text.color, family: StyleMap.prototype.text.family, kerning: StyleMap.prototype.text.kerning, overflow: StyleMap.prototype.text.overflow, size: StyleMap.prototype.text.size, stretch: StyleMap.prototype.text.stretch, style: StyleMap.prototype.text.style, weight: StyleMap.prototype.text.weight, wrap: StyleMap.prototype.text.wrap}
+        }
+          function Color(red, green, blue, alpha) {
+            this.value = ((blue & 0xFF) << 00) | ((green & 0xFF) << 08) | ((red & 0xFF) << 16) | ((arguments.length > 3 ? alpha * 0xF : 0xF) << 24)
+          }
+            Color.prototype = {
+              getAlpha : function getAlpha() { return ((this.value & 0xF000000) >> 24) / 0xF },
+              getBlue  : function getBlue () { return (this.value & 0x0000FF) >> 00 },
+              getGreen : function getGreen() { return (this.value & 0x00FF00) >> 08 },
+              getRed   : function getRed  () { return (this.value & 0xFF0000) >> 16 },
+              isVisible: function isVisible() { return 0.0 !== this.getAlpha() },
+              setAlpha : function setAlpha(alpha) { this.value = ((alpha * 0x0F) << 24) | (this.value & 0x0FFFFFF); return this },
+              setBlue  : function setBlue (blue)  { this.value = ((blue  & 0xFF) << 00) | (this.value & 0xFFFFF00); return this },
+              setGreen : function setGreen(green) { this.value = ((green & 0xFF) << 08) | (this.value & 0xFFF00FF); return this },
+              setRed   : function setRed  (red)   { this.value = ((red   & 0xFF) << 16) | (this.value & 0xF00FFFF); return this },
+              toString: function toString() { return "rgba(" + this.getRed() + ", " + this.getGreen() + ", " + this.getBlue() + ", " + this.getAlpha() + ')' },
+              valueOf : function valueOf () { return this.value },
+
+              value: null
+            };
+
+            // ...
+            var Colors = {
+              ALICE_BLUE             : new Color(0xF0, 0xF8, 0xFF, 1.0),
+              ANTIQUE_WHITE          : new Color(0xFA, 0xEB, 0xD7, 1.0),
+              AQUAMARINE             : new Color(0x7F, 0xFF, 0xD4, 1.0),
+              AZURE                  : new Color(0xF0, 0xFF, 0xFF, 1.0),
+              BEIGE                  : new Color(0xF5, 0xF5, 0xDC, 1.0),
+              BISQUE                 : new Color(0xFF, 0xE4, 0xC4, 1.0),
+              BLACK                  : new Color(0x00, 0x00, 0x00, 1.0),
+              BLANCHED_ALMOND        : new Color(0xFF, 0xEB, 0xCD, 1.0),
+              BLUE                   : new Color(0x00, 0x00, 0xFF, 1.0),
+              BLUE_VIOLET            : new Color(0x8A, 0x2B, 0xE2, 1.0),
+              BROWN                  : new Color(0xA5, 0x2A, 0x2A, 1.0),
+              BURLYWOOD              : new Color(0xDE, 0xB8, 0x87, 1.0),
+              CADET_BLUE             : new Color(0x5F, 0x9E, 0xA0, 1.0),
+              CHARTREUSE             : new Color(0x7F, 0xFF, 0x00, 1.0),
+              CHOCOLATE              : new Color(0xD2, 0x69, 0x1E, 1.0),
+              CORAL                  : new Color(0xFF, 0x7F, 0x50, 1.0),
+              CORNFLOWER_BLUE        : new Color(0x64, 0x95, 0xED, 1.0),
+              CORNSILK               : new Color(0xFF, 0xF8, 0xDC, 1.0),
+              CYAN                   : new Color(0x00, 0xFF, 0xFF, 1.0),
+              DARK_BLUE              : new Color(0x00, 0x00, 0x8B, 1.0),
+              DARK_CYAN              : new Color(0x00, 0x8B, 0x8B, 1.0),
+              DARK_GOLDENROD         : new Color(0xB8, 0x86, 0x0B, 1.0),
+              DARK_GRAY              : new Color(0xA9, 0xA9, 0xA9, 1.0),
+              DARK_GREEN             : new Color(0x00, 0x64, 0x00, 1.0),
+              DARK_GREY              : new Color(0xA9, 0xA9, 0xA9, 1.0),
+              DARK_KHAKI             : new Color(0xBD, 0xB7, 0x6B, 1.0),
+              DARK_MAGENTA           : new Color(0x8B, 0x00, 0x8B, 1.0),
+              DARK_OLIVE_GREEN       : new Color(0x55, 0x6B, 0x2F, 1.0),
+              DARK_ORANGE            : new Color(0xFF, 0x8C, 0x00, 1.0),
+              DARK_ORCHID            : new Color(0x99, 0x32, 0xCC, 1.0),
+              DARK_RED               : new Color(0x8B, 0x00, 0x00, 1.0),
+              DARK_SALMON            : new Color(0xE9, 0x96, 0x7A, 1.0),
+              DARK_SEA_GREEN         : new Color(0x8F, 0xBC, 0x8F, 1.0),
+              DARK_SLATE_BLUE        : new Color(0x48, 0x3D, 0x8B, 1.0),
+              DARK_SLATE_GRAY        : new Color(0x2F, 0x4F, 0x4F, 1.0),
+              DARK_TURQUOISE         : new Color(0x00, 0xCE, 0xD1, 1.0),
+              DARK_VIOLET            : new Color(0x94, 0x00, 0xD3, 1.0),
+              DEEP_PINK              : new Color(0xFF, 0x14, 0x93, 1.0),
+              DEEP_SKY_BLUE          : new Color(0x00, 0xBF, 0xFF, 1.0),
+              DIM_GRAY               : new Color(0x69, 0x69, 0x69, 1.0),
+              DIM_GREY               : new Color(0x69, 0x69, 0x69, 1.0),
+              DODGER_BLUE            : new Color(0x1E, 0x90, 0xFF, 1.0),
+              FIREBRICK              : new Color(0xB2, 0x22, 0x22, 1.0),
+              FLORAL_WHITE           : new Color(0xFF, 0xFA, 0xF0, 1.0),
+              FOREST_GREEN           : new Color(0x22, 0x8B, 0x22, 1.0),
+              GAINSBORO              : new Color(0xDC, 0xDC, 0xDC, 1.0),
+              GHOST_WHITE            : new Color(0xF8, 0xF8, 0xFF, 1.0),
+              GOLD                   : new Color(0xFF, 0xD7, 0x00, 1.0),
+              GOLDENROD              : new Color(0xDA, 0xA5, 0x20, 1.0),
+              GRAY                   : new Color(0xBE, 0xBE, 0xBE, 1.0),
+              GREEN                  : new Color(0x00, 0xFF, 0x00, 1.0),
+              GREEN_YELLOW           : new Color(0xAD, 0xFF, 0x2F, 1.0),
+              GREY                   : new Color(0xBE, 0xBE, 0xBE, 1.0),
+              HONEYDEW               : new Color(0xF0, 0xFF, 0xF0, 1.0),
+              HOT_PINK               : new Color(0xFF, 0x69, 0xB4, 1.0),
+              INDIAN_RED             : new Color(0xCD, 0x5C, 0x5C, 1.0),
+              IVORY                  : new Color(0xFF, 0xFF, 0xF0, 1.0),
+              KHAKI                  : new Color(0xF0, 0xE6, 0x8C, 1.0),
+              LAVENDER               : new Color(0xE6, 0xE6, 0xFA, 1.0),
+              LAVENDER_BLUSH         : new Color(0xFF, 0xF0, 0xF5, 1.0),
+              LAWN_GREEN             : new Color(0x7C, 0xFC, 0x00, 1.0),
+              LEMON_CHIFFON          : new Color(0xFF, 0xFA, 0xCD, 1.0),
+              LIGHT_BLUE             : new Color(0xAD, 0xD8, 0xE6, 1.0),
+              LIGHT_CORAL            : new Color(0xF0, 0x80, 0x80, 1.0),
+              LIGHT_CYAN             : new Color(0xE0, 0xFF, 0xFF, 1.0),
+              LIGHT_GOLDENROD        : new Color(0xEE, 0xDD, 0x82, 1.0),
+              LIGHT_GOLDENROD_YELLOW : new Color(0xFA, 0xFA, 0xD2, 1.0),
+              LIGHT_GRAY             : new Color(0xD3, 0xD3, 0xD3, 1.0),
+              LIGHT_GREEN            : new Color(0x90, 0xEE, 0x90, 1.0),
+              LIGHT_GREY             : new Color(0xD3, 0xD3, 0xD3, 1.0),
+              LIGHT_PINK             : new Color(0xFF, 0xB6, 0xC1, 1.0),
+              LIGHT_SALMON           : new Color(0xFF, 0xA0, 0x7A, 1.0),
+              LIGHT_SEA_GREEN        : new Color(0x20, 0xB2, 0xAA, 1.0),
+              LIGHT_SKY_BLUE         : new Color(0x87, 0xCE, 0xFA, 1.0),
+              LIGHT_SLATE_BLUE       : new Color(0x84, 0x70, 0xFF, 1.0),
+              LIGHT_SLATE_GRAY       : new Color(0x77, 0x88, 0x99, 1.0),
+              LIGHT_SLATE_GREY       : new Color(0x77, 0x88, 0x99, 1.0),
+              LIGHT_STEEL_BLUE       : new Color(0xB0, 0xC4, 0xDE, 1.0),
+              LIGHT_YELLOW           : new Color(0xFF, 0xFF, 0xE0, 1.0),
+              LIME_GREEN             : new Color(0x32, 0xCD, 0x32, 1.0),
+              LINEN                  : new Color(0xFA, 0xF0, 0xE6, 1.0),
+              MAGENTA                : new Color(0xFF, 0x00, 0xFF, 1.0),
+              MAROON                 : new Color(0xB0, 0x30, 0x60, 1.0),
+              MEDIUM_AQUAMARINE      : new Color(0x66, 0xCD, 0xAA, 1.0),
+              MEDIUM_BLUE            : new Color(0x00, 0x00, 0xCD, 1.0),
+              MEDIUM_ORCHID          : new Color(0xBA, 0x55, 0xD3, 1.0),
+              MEDIUM_PURPLE          : new Color(0x93, 0x70, 0xDB, 1.0),
+              MEDIUM_SEA_GREEN       : new Color(0x3C, 0xB3, 0x71, 1.0),
+              MEDIUM_SLATE_BLUE      : new Color(0x7B, 0x68, 0xEE, 1.0),
+              MEDIUM_SPRING_GREEN    : new Color(0x00, 0xFA, 0x9A, 1.0),
+              MEDIUM_TURQUOISE       : new Color(0x48, 0xD1, 0xCC, 1.0),
+              MEDIUM_VIOLET_RED      : new Color(0xC7, 0x15, 0x85, 1.0),
+              MIDNIGHT_BLUE          : new Color(0x19, 0x19, 0x70, 1.0),
+              MINT_CREAM             : new Color(0xF5, 0xFF, 0xFA, 1.0),
+              MISTY_ROSE             : new Color(0xFF, 0xE4, 0xE1, 1.0),
+              MOCCASIN               : new Color(0xFF, 0xE4, 0xB5, 1.0),
+              NAVAJO_WHITE           : new Color(0xFF, 0xDE, 0xAD, 1.0),
+              NAVY                   : new Color(0x00, 0x00, 0x80, 1.0),
+              NAVY_BLUE              : new Color(0x00, 0x00, 0x80, 1.0),
+              OLD_LACE               : new Color(0xFD, 0xF5, 0xE6, 1.0),
+              OLIVE_DRAB             : new Color(0x6B, 0x8E, 0x23, 1.0),
+              ORANGE                 : new Color(0xFF, 0xA5, 0x00, 1.0),
+              ORANGE_RED             : new Color(0xFF, 0x45, 0x00, 1.0),
+              ORCHID                 : new Color(0xDA, 0x70, 0xD6, 1.0),
+              PALE_GOLDENROD         : new Color(0xEE, 0xE8, 0xAA, 1.0),
+              PALE_GREEN             : new Color(0x98, 0xFB, 0x98, 1.0),
+              PALE_TURQUOISE         : new Color(0xAF, 0xEE, 0xEE, 1.0),
+              PALE_VIOLET_RED        : new Color(0xDB, 0x70, 0x93, 1.0),
+              PAPAYA_WHIP            : new Color(0xFF, 0xEF, 0xD5, 1.0),
+              PEACH_PUFF             : new Color(0xFF, 0xDA, 0xB9, 1.0),
+              PERU                   : new Color(0xCD, 0x85, 0x3F, 1.0),
+              PINK                   : new Color(0xFF, 0xC0, 0xCB, 1.0),
+              PLUM                   : new Color(0xDD, 0xA0, 0xDD, 1.0),
+              POWDER_BLUE            : new Color(0xB0, 0xE0, 0xE6, 1.0),
+              PURPLE                 : new Color(0xA0, 0x20, 0xF0, 1.0),
+              RED                    : new Color(0xFF, 0x00, 0x00, 1.0),
+              ROSY_BROWN             : new Color(0xBC, 0x8F, 0x8F, 1.0),
+              ROYAL_BLUE             : new Color(0x41, 0x69, 0xE1, 1.0),
+              SADDLE_BROWN           : new Color(0x8B, 0x45, 0x13, 1.0),
+              SALMON                 : new Color(0xFA, 0x80, 0x72, 1.0),
+              SANDY_BROWN            : new Color(0xF4, 0xA4, 0x60, 1.0),
+              SEA_GREEN              : new Color(0x2E, 0x8B, 0x57, 1.0),
+              SEASHELL               : new Color(0xFF, 0xF5, 0xEE, 1.0),
+              SIENNA                 : new Color(0xA0, 0x52, 0x2D, 1.0),
+              SKY_BLUE               : new Color(0x87, 0xCE, 0xEB, 1.0),
+              SLATE_BLUE             : new Color(0x6A, 0x5A, 0xCD, 1.0),
+              SLATE_GRAY             : new Color(0x70, 0x80, 0x90, 1.0),
+              SLATE_GREY             : new Color(0x70, 0x80, 0x90, 1.0),
+              SNOW                   : new Color(0xFF, 0xFA, 0xFA, 1.0),
+              SPRING_GREEN           : new Color(0x00, 0xFF, 0x7F, 1.0),
+              STEEL_BLUE             : new Color(0x46, 0x82, 0xB4, 1.0),
+              TAN                    : new Color(0xD2, 0xB4, 0x8C, 1.0),
+              THISTLE                : new Color(0xD8, 0xBF, 0xD8, 1.0),
+              TOMATO                 : new Color(0xFF, 0x63, 0x47, 1.0),
+              TRANSPARENT            : new Color(0x00, 0x00, 0x00, 0.0),
+              TURQUOISE              : new Color(0x40, 0xE0, 0xD0, 1.0),
+              VIOLET                 : new Color(0xEE, 0x82, 0xEE, 1.0),
+              VIOLET_RED             : new Color(0xD0, 0x20, 0x90, 1.0),
+              WHEAT                  : new Color(0xF5, 0xDE, 0xB3, 1.0),
+              WHITE                  : new Color(0xFF, 0xFF, 0xFF, 1.0),
+              WHITE_SMOKE            : new Color(0xF5, 0xF5, 0xF5, 1.0),
+              YELLOW                 : new Color(0xFF, 0xFF, 0x00, 1.0),
+              YELLOW_GREEN           : new Color(0x9A, 0xCD, 0x32, 1.0)
+            };
+
+          function Bounds(left, top, right, bottom) {
+            this.bottom = bottom;
+            this.left   = left;
+            this.right  = right;
+            this.top    = top
+          }
+            Bounds.prototype = {
+              setEdges          : function setEdges          (value) { this.bottom = this.left = this.right = this.top = value; return this },
+              setHorizontalEdges: function setHorizontalEdges(value) { this.left = this.right = value; return this },
+              setVerticalEdges  : function setVerticalEdges  (value) { this.bottom = this.top = value; return this },
+
+              bottom: undefined,
+              left  : undefined,
+              right : undefined,
+              top   : undefined
+            };
+
+          function Border() {}
+            Border.prototype = {
+              color: Colors.TRANSPARENT,
+              width: 0.0
+            };
+
+          // ...
+          StyleMap.prototype = {
+            background: {color: Colors.WHITE, image: null, position: Styles.CENTER, x: 0.0, y: 0.0},
+            border    : new Bounds(new Border(), new Border(), new Border(), new Border()),
+            caret     : {color: Styles.AUTO, width: 2.0},
+            cursor    : "lol",
+            display   : Styles.BLOCK,
+            height    : Styles.AUTO,
+            lineHeight: 1.2,
+            margin    : new Bounds(Styles.AUTO, Styles.AUTO, Styles.AUTO, Styles.AUTO),
+            maxHeight : Styles.AUTO,
+            maxWidth  : Styles.AUTO,
+            minHeight : Styles.AUTO,
+            minWidth  : Styles.AUTO,
+            opacity   : 1.0,
+            overflow  : Styles.NORMAL,
+            padding   : new Bounds(0, 0, 0, 0),
+            position  : Styles.RELATIVE,
+            scroll    : {left: 0.0, style: Styles.NORMAL, top: 0.0},
+            shadow    : {blur: 0.0, color: Colors.TRANSPARENT, left: 0.0, top: 0.0},
+            text      : {align: Styles.LEFT, color: Colors.BLACK, family: Styles.SANS_SERIF, kerning: Styles.NORMAL, overflow: Styles.NORMAL, size: 16.0, stretch: Styles.NORMAL, style: Styles.NORMAL, weight: Styles.NORMAL, wrap: Styles.NORMAL},
+            transition: {delay: 0.0, duration: 0.0, "function": Styles.LINEAR},
+            width     : Styles.AUTO
+          };
+
+        // ...
+        function Stream() {}
+          Stream.prototype = [];
+
+        // ...
+        function PointList() {}
+          PointList.prototype = [];
+
+        // ...
+        function Point(x, y) {
+          this.controls = new PointList();
+          this.x        = arguments.length     ? x : 0;
+          this.y        = arguments.length > 1 ? y : 0
+        }
+          Point.prototype = {
+            controls: new PointList(),
+            x       : -1,
+            y       : -1
+          };
+
+        // ...
+        function PointerData(control, point) {
+          if (arguments.length) {
+            PointerStream.push(this);
+
+            this.control = control;
+            this.point   = arguments.length > 1 ? point : null
+          }
+        }
+          PointerData.prototype = {
+            valueOf: function valueOf() { return this.control },
+
+            active : false,
+            control: 0x0,
+            point  : new Point(Point.prototype.x, Point.prototype.y)
+          };
+
+          // ...
+          var PointerControls = {EXTENDED: 0x8, PRIMARY: 0x1, SECONDARY: 0x2, TERTIARY: 0x4};
+          var PointerStream   = new Stream();
+
+        // ...
+        function ListenerCollection() {}
+          ListenerCollection.prototype = [];
+
+        // ...
+        function Listener(target, callback) {
+          this.callback = callback;
+          this.target   = target
+        }
+          Listener.prototype = {
+            callback: null,
+            target  : null
+          };
+
+        // ...
+        function Key(code) {
+          if (arguments.length) {
+            KeyStream.push(this);
+            this.code = code
+          }
+        }
+          Key.prototype = {
+            valueOf: function valueOf() { return this.code },
+
+            active: false,
+            code  : null
+          };
+
+          // ...
+          var KeyCodes  = {};
+          var KeyStream = new Stream();
+
+        // ...
+        function Event(target) {
+          this.target = target
+        }
+          Event.prototype = {
+            data      : null, // specific to event type
+            defaulted : true,
+            propagated: true,
+            target    : null,
+
+            stopDefault    : function stopDefault    () { this.defaulted  = false },
+            stopPropagation: function stopPropagation() { this.propagated = false }
+          };
+
+          // ...
+          function ActiveEvent(target) { Event.call(this, target) }
+            ActiveEvent.prototype = {
+              defaulted : Event.prototype.defaulted,
+              propagated: Event.prototype.propagated,
+              target    : Event.prototype.target
+            };
+
+          function ComponentTreeEvent(target) { Event.call(this, target) }
+            ComponentTreeEvent.prototype = {
+              defaulted : Event.prototype.defaulted,
+              propagated: Event.prototype.propagated,
+              target    : Event.prototype.target,
+
+              added    : false,
+              parented : null,
+              removed  : false,
+              resourced: false,
+              retexted : false
+            };
+
+          function DrawEvent(target) { Event.call(this, target) }
+            DrawEvent.prototype = {
+              defaulted : Event.prototype.defaulted,
+              propagated: Event.prototype.propagated,
+              target    : Event.prototype.target
+            };
+
+          function FocusEvent(target) { Event.call(this, target) }
+            FocusEvent.prototype = {
+              defaulted : Event.prototype.defaulted,
+              propagated: Event.prototype.propagated,
+              target    : Event.prototype.target
+            };
+
+          function KeyEvent(target) { Event.call(this, target) }
+            KeyEvent.prototype = {
+              defaulted : Event.prototype.defaulted,
+              propagated: Event.prototype.propagated,
+              target    : Event.prototype.target,
+
+              key: new Key()
+            };
+
+          function LoadEvent(target, source, loaded) {
+            Event.call(this, target);
+
+            this.loaded   = arguments.length < 3 || loaded;
+            this.resource = source
+          }
+            LoadEvent.prototype = {
+              defaulted : Event.prototype.defaulted,
+              propagated: Event.prototype.propagated,
+              target    : Event.prototype.target,
+
+              loaded  : false,
+              pending : false,
+              resource: null
+            };
+
+          function PointerEvent(target) { Event.call(this, target) }
+            PointerEvent.prototype = {
+              defaulted : Event.prototype.defaulted,
+              propagated: Event.prototype.propagated,
+              target    : Event.prototype.target,
+
+              bounded: false,
+              dragged: false,
+              pointer: new PointerData()
+            };
+
+          function ScrollEvent(target) { Event.call(this, target) }
+            ScrollEvent.prototype = {
+              defaulted : Event.prototype.defaulted,
+              propagated: Event.prototype.propagated,
+              target    : Event.prototype.target
+            };
+
+          function SubmitEvent(target) { Event.call(this, target) }
+            SubmitEvent.prototype = {
+              defaulted : Event.prototype.defaulted,
+              propagated: Event.prototype.propagated,
+              target    : Event.prototype.target
+            };
+
+          function TransitionEvent(target) { Event.call(this, target) }
+            TransitionEvent.prototype = {
+              defaulted : Event.prototype.defaulted,
+              propagated: Event.prototype.propagated,
+              target    : Event.prototype.target,
+
+              ended  : false,
+              started: false
+            };
+
+        // ...
+        function ComponentCollection() {}
+          ComponentCollection.prototype = [];
+
+        // ...
+        function Component(name) {
+          this.style        = new StyleMap();
+          this.style.height = Styles.AUTO;
+          this.style.width  = Styles.AUTO;
+          this.states       = {active: this.style, even: this.style, first: this.style, focus: this.style, hover: this.style, last: this.style, odd: this.style, visit: this.style};
+          this.name         = arguments.length && null !== name ? name.toString() : null
+        }
+          Component.prototype = {
+            addChild: function addChild(component) {
+              if (this.children.indexOf(component) === -1) {
+                var event = new ComponentTreeEvent(this);
+
+                // ...
+                component.parent = this;
+                event.added    = true;
+                event.parented = component;
+
+                this.children.push(component);
+                this.dispatchEvent(ComponentTreeEvent, event);
+
+                return true
+              }
+
+              return false
+            },
+
+            addEventListener: function addEventListener(type, callback) {
+              var listeners = Components.getListenersByEventType(type);
+
+              if (null === listeners)
+              return false;
+
+              for (var index = listeners.length; index--; ) {
+                if (callback === listeners[index].callback && target === listeners[index].target)
+                return false
+              }
+
+              listeners.push(new Listener(this, callback));
+              return true
+            },
+
+            click: function click() {
+              return this.dispatchEvent(PointerEvent, new PointerEvent(this))
+            },
+
+            dispatchEvent: function dispatchEvent(type, event) {
+              var listened  = [];
+              var listeners = Components.getListenersByEventType(type);
+              var target    = this;
+
+              // ...
+              if (null === listeners)
+              return false;
+
+              while (null !== target) {
+                var propagationTarget = null;
+
+                // ...
+                dispatch:
+                for (var index = 0; index < listeners.length; ++index)
+                if (target === listeners[index].target) {
+                  for (var subindex = listened.length; subindex; )
+                  if (listeners[index] === listened[--subindex]) continue dispatch;
+
+                  index = 0;
+                  propagationTarget = target.parent;
+                  listened.push(listeners[index]);
+                  listeners[index].callback.call(this, event)
+                }
+
+                if (false === event.propagated)
+                break;
+
+                listened.length = 0;
+                target = propagationTarget
+              }
+
+              // ...
+              return event.defaulted
+            },
+
+            draw: function draw(context) {},
+            getComputedBounds: function getComputedBounds(context) {},
+            getComputedHeight: function getComputedHeight(context) {
+              // INLINE demands children's heights
+              // BLOCK demands no height
+            },
+
+            getComputedStyle: function getComputedStyle() {
+              if (this.isActive ()) return this.states.active;
+              if (this.isFocused()) return this.states.focus;
+              if (this.isHovered()) return this.states.hover;
+              if (this.isVisited()) return this.states.visit;
+              if (this.isFirst  ()) return this.states.first;
+              if (this.isLast   ()) return this.states.last;
+              if (this.isEven   ()) return this.states.even;
+              if (this.isOdd    ()) return this.states.odd;
+
+              return this.style
+            },
+
+            getComputedWidth: function getComputedWidth(context) {
+              var style    = this.getComputedStyle();
+              var computed = Styles.AUTO === style.width;
+              var width    = computed ? this.getNaturalWidth(context) : style.width;
+
+              // ...
+              if (computed) {
+                if (style.display & Styles.INLINE) {
+                  if (this.hasChildren())
+                  for (var index = this.children.length; index; )
+                  width += this.children[--index].getComputedWidth(context)
+                }
+
+                else {
+                  if (null === this.parent) width = context.canvas.width;
+                  else if (false == (this.parent.getComputedStyle().display & Styles.INLINE)) width = this.parent.getComputedWidth(context)
+                }
+              }
+
+              // ...
+              if (false === (computed && (this instanceof Image || this instanceof Shape))) {
+                if (null === this.parent) width = width > context.canvas.width ? context.canvas.width : width;
+                else if (false == (this.parent.getComputedStyle().display & Styles.INLINE)) {
+                  var parentWidth = this.parent.getComputedWidth(context);
+                  width = width > parentWidth ? parentWidth : width
+                }
+              }
+
+              // ...
+              return width
+            },
+
+            getNaturalHeight: function getNaturalHeight(context) {
+              return 0
+            },
+
+            getNaturalWidth: function getNaturalWidth(context) {
+              return 0
+            },
+
+            getRoot: function getRoot() {
+              var root;
+
+              // ...
+              for (var component = this; null !== component; component = component.parent)
+              root = component;
+
+              return root
+            },
+
+            hasChildren: function hasChildren() {
+              return this instanceof Component && 0 !== this.children.length
+            },
+
+            isActive: function isActive() {
+              for (var index = Components.ACTIVE.length; index; )
+              if (this === Components.ACTIVE[--index]) return true;
+
+              return false
+            },
+
+            isEven: function isEven() {
+              if (null !== this.parent) {
+                for (var index = this.parent.children.length; index; )
+                if (this === this.parent.children[--index]) return 0 !== index && 0 === index & 1
+              }
+
+              return false
+            },
+
+            isFirst: function isFirst() {
+              return Components.ROOT === this || (null !== this.parent && this === this.parent.children[0])
+            },
+
+            isFocused: function isFocused() {
+              for (var index = Components.FOCUSED.length; index; )
+              if (this === Components.FOCUSED[--index]) return true;
+
+              return false
+            },
+
+            isHovered: function isHovered() {
+              for (var index = Components.HOVERED.length; index; )
+              if (this === Components.HOVERED[--index]) return true;
+
+              return false
+            },
+
+            isLast: function isLast() {
+              return Components.ROOT === this || (null !== this.parent && this === this.parent.children[this.parent.children.length - 1])
+            },
+
+            isOdd: function isOdd() {
+              if (null !== this.parent) {
+                for (var index = this.parent.children.length; index; )
+                if (this === this.parent.children[--index]) return index & 1
+              }
+
+              return false
+            },
+
+            isVisible: function isVisible() {
+              return Components.ROOT === this || 0.0 !== this.style.opacity
+            },
+
+            isVisited: function isVisited() {
+              for (var index = Components.VISITED.length; index; )
+              if (this === Components.VISITED[--index]) return true;
+
+              return false
+            },
+
+            removeChild: function removeChild(component) {
+              for (var index = this.children.length; index; )
+              if (component === this.children[--index]) {
+                var event = new ComponentTreeEvent(this);
+
+                // ...
+                component.parent = null;
+                event.parented = component;
+                event.removed  = true;
+
+                this.children.splice(index, 1);
+                this.dispatchEvent(ComponentTreeEvent, event);
+
+                return true
+              }
+
+              return false
+            },
+
+            removeEventListener: function removeEventListener(type, callback) {
+              var listeners = Components.getListenersByEventType(type);
+              var removed   = false;
+
+              if (null !== listeners) {
+                for (var index = listeners.length; index--; )
+                if (this === listeners[index].target) {
+                  if (arguments.length === 1) {
+                    listeners.splice(index, 1);
+                    removed = true
+                  }
+
+                  else if (callback === listeners[index].callback) {
+                    listeners.splice(index, 1);
+                    removed = true;
+                    break
+                  }
+                }
+              }
+
+              return removed
+            },
+
+            scrollByX: function scrollByX(value) { void 0 },
+            scrollByY: function scrollByY(value) { void 0 },
+            scrollToX: function scrollToX(value) { void 0 },
+            scrollToY: function scrollToY(value) { void 0 },
+
+            children: new ComponentCollection(),
+            name    : null,
+            parent  : null,
+            states  : {
+              active: new StyleMap(),
+              even  : new StyleMap(),
+              first : new StyleMap(),
+              focus : new StyleMap(),
+              hover : new StyleMap(),
+              last  : new StyleMap(),
+              odd   : new StyleMap(),
+              visit : new StyleMap()
+            },
+            style   : new StyleMap()
+          };
+
+          // ...
+          var Components = {
+            drawAll: function drawAll(context) {
+              if (null !== Components.ROOT)
+              Components.ROOT.draw(context)
+            },
+
+            getComponentByName: function getComponentByName(name) {
+              if ('*' === name) return Components.ROOT;
+
+              var collection = Components.getComponentsByName(name);
+              return null !== collection ? collection[0] : null
+            },
+
+            getComponentsByName: function getComponentsByName(name) {
+              var components = new ComponentCollection();
+              var current = [Components.ROOT];
+              var next    = [];
+
+              // ...
+              while (current.length) {
+                for (var index = 0, length = current.length; index !== length; ++index) {
+                  var component = current[index];
+
+                  // ...
+                  if ('*' === name || name === component.name)
+                  components.push(component);
+
+                  if (component.hasChildren()) {
+                    for (var subindex = 0, sublength = component.children.length; subindex !== sublength; ++subindex)
+                    next.push(component.children[subindex])
+                  }
+                }
+
+                current = next;
+                next    = []
+              }
+
+              return components.length ? components : null
+            },
+
+            getListenersByEventType: function getListenersByEventType(type) {
+              switch (type) {
+                case ActiveEvent       : return Components.LISTENERS.active;
+                case ComponentTreeEvent: return Components.LISTENERS.componentTree;
+                case DrawEvent         : return Components.LISTENERS.draw;
+                case FocusEvent        : return Components.LISTENERS.focus;
+                case KeyEvent          : return Components.LISTENERS.key;
+                case LoadEvent         : return Components.LISTENERS.load;
+                case PointerEvent      : return Components.LISTENERS.pointer;
+                case ScrollEvent       : return Components.LISTENERS.scroll;
+                case SubmitEvent       : return Components.LISTENERS.submit;
+                case TransitionEvent   : return Components.LISTENERS.transition
+              }
+
+              return null
+            },
+
+            ACTIVE : new ComponentCollection(),
+            FOCUSED: new ComponentCollection(),
+            HOVERED: new ComponentCollection(),
+            LISTENERS: {
+              active       : new ListenerCollection(),
+              componentTree: new ListenerCollection(),
+              draw         : new ListenerCollection(),
+              focus        : new ListenerCollection(),
+              key          : new ListenerCollection(),
+              load         : new ListenerCollection(),
+              pointer      : new ListenerCollection(),
+              scroll       : new ListenerCollection(),
+              submit       : new ListenerCollection(),
+              transition   : new ListenerCollection()
+            },
+            ROOT   : null,
+            VISITED: new ComponentCollection()
+          };
+
+          // ...
+          function Image(name, source) {
+            var image    = null;
+            var resource = null;
+            var style;
+
+            // ...
+            arguments.length ? Component.call(this, name) : Component.call(this);
+            style = this.getComputedStyle();
+
+            // ...
+            this.getSource = function getSource() { return resource };
+            this.setSource = function setSource(source) {
+              if (null !== source) source = source.toString();
+              else { if (null !== resource) { resource.clearRect(0, 0, resource.width, resource.height); resource.height = 0; resource.width = 0 } return }
+
+              // ...
+              var componentTreeEvent;
+              var loadEvent;
+
+              if (null === resource) resource = GLOBAL.document.createElement("canvas");
+              if (null === image) {
+                var that = this;
+
+                // ...
+                image = GLOBAL.document.createElement("img");
+
+                image.onerror = function(event) {
+                  if (that.dispatchEvent(LoadEvent, new LoadEvent(that, source, false))) {
+                    resource.getContext("2d").clearRect(0, 0, resource.width, resource.height);
+                    resource.height = 0;
+                    resource.width  = 0
+                  }
+                };
+
+                image.onload = function(event) {
+                  if (that.dispatchEvent(LoadEvent, new LoadEvent(that, source, true)) && that.isVisible()) {
+                    resource.height = image.height;
+                    resource.width  = image.width;
+                    resource.getContext("2d").drawImage(0, 0, image.width, image.height);
+
+                    Components.drawAll(MEMORY_CONTEXT)
+                  }
+                }
+              }
+
+              // ...
+              componentTreeEvent           = new ComponentTreeEvent(this);
+              componentTreeEvent.resourced = true;
+              image.src                    = source;
+              loadEvent                    = new LoadEvent(this, null, false);
+              loadEvent.pending            = true;
+              loadEvent.resource           = resource.src;
+
+              this.dispatchEvent(ComponentTreeEvent, componentTreeEvent);
+              this.dispatchEvent(LoadEvent, loadEvent)
+            };
+
+            style.background.color       = Colors.TRANSPARENT;
+            style.display                = Styles.BLOCK | Styles.INLINE;
+            style.scroll.style           = Styles.NONE;
+            style.transition.delay       = Styles.AUTO;
+            style.transition.duration    = Styles.AUTO;
+            style.transition["function"] = Styles.AUTO;
+
+            // ...
+            if (arguments.length) this.setSource(source)
+          }
+            Image.prototype = {
+              addEventListener   : Component.prototype.addEventListener,
+              click              : Component.prototype.click,
+              dispatchEvent      : Component.prototype.dispatchEvent,
+              draw               : Component.prototype.draw,
+              getComputedHeight  : Component.prototype.getComputedHeight,
+              getComputedBounds  : Component.prototype.getComputedBounds,
+              getComputedStyle   : Component.prototype.getComputedStyle,
+              getComputedWidth   : Component.prototype.getComputedWidth,
+              getRoot            : Component.prototype.getRoot,
+              hasChildren        : Component.prototype.hasChildren,
+              isActive           : Component.prototype.isActive,
+              isEven             : Component.prototype.isEven,
+              isFirst            : Component.prototype.isFirst,
+              isFocused          : Component.prototype.isFocused,
+              isHovered          : Component.prototype.isHovered,
+              isLast             : Component.prototype.isLast,
+              isOdd              : Component.prototype.isOdd,
+              isVisited          : Component.prototype.isVisited,
+              name               : Component.prototype.name,
+              parent             : Component.prototype.parent,
+              removeEventListener: Component.prototype.removeEventListener,
+              states             : Component.prototype.states,
+              style              : Component.prototype.style,
+
+              // ...
+              getNaturalHeight: function getNaturalHeight(context) { return null !== this.getSource() ? this.getSource().height : 0 },
+              getNaturalWidth : function getNaturalWidth (context) { return null !== this.getSource() ? this.getSource().width  : 0 },
+              getSource: function getSource() { return null },
+              setSource: function setSource(source) {}
+            };
+
+          function Shape(name, points) {
+            var style;
+
+            // ...
+            arguments.length ? Component.call(this, name) : Component.call(this);
+            style = this.getComputedStyle();
+
+            // ...
+            style.border.setEdges(new Border());
+            style.display = Styles.BLOCK | Styles.INLINE;
+
+            this.points = new PointList();
+            for (var index = 1, length = arguments.length; index < length; ++index) this.points.push(arguments[index])
+          }
+            Shape.prototype = {
+              addEventListener   : Component.prototype.addEventListener,
+              click              : Component.prototype.click,
+              dispatchEvent      : Component.prototype.dispatchEvent,
+              draw               : Component.prototype.draw,
+              getComputedHeight  : Component.prototype.getComputedHeight,
+              getComputedBounds  : Component.prototype.getComputedBounds,
+              getComputedStyle   : Component.prototype.getComputedStyle,
+              getComputedWidth   : Component.prototype.getComputedWidth,
+              getRoot            : Component.prototype.getRoot,
+              hasChildren        : Component.prototype.hasChildren,
+              isActive           : Component.prototype.isActive,
+              isEven             : Component.prototype.isEven,
+              isFirst            : Component.prototype.isFirst,
+              isFocused          : Component.prototype.isFocused,
+              isHovered          : Component.prototype.isHovered,
+              isLast             : Component.prototype.isLast,
+              isOdd              : Component.prototype.isOdd,
+              isVisited          : Component.prototype.isVisited,
+              name               : Component.prototype.name,
+              parent             : Component.prototype.parent,
+              removeEventListener: Component.prototype.removeEventListener,
+              states             : Component.prototype.states,
+              style              : Component.prototype.style,
+
+              // ...
+              getNaturalHeight: function getNaturalHeight(context) {
+                var bottom = null;
+                var top    = null;
+
+                // ...
+                for (var index = this.points.length; index; ) {
+                  var point = this.points[--index];
+
+                  if (null === bottom || bottom < point.y) bottom = point.y;
+                  if (null === top    || top    > point.y) top    = point.y
+                }
+
+                return bottom - top
+              },
+
+              getNaturalWidth: function getNaturalWidth(context) {
+                var left  = null;
+                var right = null;
+
+                // ...
+                for (var index = this.points.length; index; ) {
+                  var point = this.points[--index];
+
+                  if (null === left  || left  > point.x) left  = point.x;
+                  if (null === right || right < point.x) right = point.x
+                }
+
+                return right - left
+              },
+
+              getPoints: function getPoints() {
+                return this.points
+              },
+
+              setPoints: function setPoints(points) {
+                this.points.push.apply(this, arguments)
+              },
+
+              points: new PointList()
+            };
+
+          function Text(name, content) {
+            var style;
+            var text = "";
+
+            // ...
+            arguments.length ? Component.call(this, name) : Component.call(this);
+            style = this.getComputedStyle();
+
+            // ...
+            style.background.color       = Colors.TRANSPARENT;
+            style.display                = Styles.INLINE;
+            style.lineHeight             = Styles.AUTO;
+            style.scroll.style           = Styles.NONE;
+            style.text.align             = Styles.AUTO;
+            style.text.color             = Styles.AUTO;
+            style.text.family            = Styles.AUTO;
+            style.text.kerning           = Styles.AUTO;
+            style.text.overflow          = Styles.AUTO;
+            style.text.size              = Styles.AUTO;
+            style.text.style             = Styles.AUTO;
+            style.text.weight            = Styles.AUTO;
+            style.transition.delay       = Styles.AUTO;
+            style.transition.duration    = Styles.AUTO;
+            style.transition["function"] = Styles.AUTO;
+
+            this.getContent = function getContent() { return text };
+            this.setContent = function setContent(content) {
+              var event = new ComponentTreeEvent(this);
+
+              text = content.toString();
+              event.retexted = true;
+
+              this.dispatchEvent(ComponentTreeEvent, event)
+            };
+
+            // ...
+            if (arguments.length) this.setContent(content)
+          }
+            Text.prototype = {
+              addEventListener   : Component.prototype.addEventListener,
+              click              : Component.prototype.click,
+              dispatchEvent      : Component.prototype.dispatchEvent,
+              draw               : Component.prototype.draw,
+              getComputedHeight  : Component.prototype.getComputedHeight,
+              getComputedBounds  : Component.prototype.getComputedBounds,
+              getComputedStyle   : Component.prototype.getComputedStyle,
+              getComputedWidth   : Component.prototype.getComputedWidth,
+              getRoot            : Component.prototype.getRoot,
+              hasChildren        : Component.prototype.hasChildren,
+              isActive           : Component.prototype.isActive,
+              isEven             : Component.prototype.isEven,
+              isFirst            : Component.prototype.isFirst,
+              isFocused          : Component.prototype.isFocused,
+              isHovered          : Component.prototype.isHovered,
+              isLast             : Component.prototype.isLast,
+              isOdd              : Component.prototype.isOdd,
+              isVisited          : Component.prototype.isVisited,
+              name               : Component.prototype.name,
+              parent             : Component.prototype.parent,
+              removeEventListener: Component.prototype.removeEventListener,
+              states             : Component.prototype.states,
+              style              : Component.prototype.style,
+
+              // ...
+              getComputedLayout: function getComputedLayout(context) {
+                var content = this.getContent();
+                var layout  = new TextLayout();
+
+                // ...
+                if ("" !== content) {
+                }
+
+                return layout
+              },
+
+              getContent: function getContent() {
+                return ""
+              },
+
+              getNaturalHeight: function getNaturalHeight(context) {
+                var height = textSize;
+                var textLineHeight = style.lineHeight;
+                var textSize       = style.text.size;
+
+                // ...
+                for (var component = this; Styles.AUTO === textLineHeight; component = null === component ? null : component.parent) textLineHeight = null === component ? StyleMap.prototype.lineHeight : component.getComputedStyle().text.color;
+                for (var component = this; Styles.AUTO === textSize;       component = null === component ? null : component.parent) textSize       = null === component ? StyleMap.prototype.text.size  : component.getComputedStyle().text.size;
+
+                for (var count = this.getComputedLayout().contents.length; --count; )
+                height += textLineHeight * textSize;
+
+                // ...
+                return height
+              },
+
+              getNaturalWidth: function getNaturalWidth(context) {
+                return this.updateContext(context).measureText(this.getContent()).width
+              },
+
+              setContent: function setContent(content) {}
+              updateContext: function updateContext(context) {
+                var style = this.getComputedStyle();
+                var textFamily     = style.text.family;
+                var textKerning    = style.text.kerning;
+                var textLineHeight = style.lineHeight;
+                var textSize       = style.text.size;
+                var textStretch    = style.text.stretch;
+                var textStyle      = style.text.style;
+                var textWeight     = style.text.weight;
+
+                // ...
+                for (var component = this; Styles.AUTO === textFamily;     component = null === component ? null : component.parent) textFamily     = null === component ? Styles.SANS_SERIF             : component.getComputedStyle().text.family;
+                for (var component = this; Styles.AUTO === textKerning;    component = null === component ? null : component.parent) textKerning    = null === component ? Styles.NORMAL                 : component.getComputedStyle().text.kerning;
+                for (var component = this; Styles.AUTO === textLineHeight; component = null === component ? null : component.parent) textLineHeight = null === component ? StyleMap.prototype.lineHeight : component.getComputedStyle().text.color;
+                for (var component = this; Styles.AUTO === textSize;       component = null === component ? null : component.parent) textSize       = null === component ? StyleMap.prototype.text.size  : component.getComputedStyle().text.size;
+                for (var component = this; Styles.AUTO === textStretch;    component = null === component ? null : component.parent) textStretch    = null === component ? Styles.NORMAL                 : component.getComputedStyle().text.stretch;
+                for (var component = this; Styles.AUTO === textStyle;      component = null === component ? null : component.parent) textStyle      = null === component ? Styles.NORMAL                 : component.getComputedStyle().text.style;
+                for (var component = this; Styles.AUTO === textWeight;     component = null === component ? null : component.parent) textWeight     = null === component ? Styles.NORMAL                 : component.getComputedStyle().text.weight;
+
+                context.font        = (textStyle & Styles.ITALIC ? "italic" : textStyle & Styles.OBLIQUE ? "oblique" : "normal") + " normal normal " + textWeight + ' ' + textStretch + ' ' + textSize + "px/" + textLineHeight + ' ' + (false === (Styles.CURSIVE === textFamily || Styles.EMOJI === textFamily || Styles.FANGSONG === textFamily || Styles.FANTASY === textFamily || Styles.MATH === textFamily || Styles.MONOSPACE === textFamily || Styles.SANS_SERIF === textFamily || Styles.SERIF === textFamily || Styles.SYSTEM_UI === textFamily || Styles.UI_MONOSPACE === textFamily || Styles.UI_ROUNDED === textFamily || Styles.UI_SANS_SERIF === textFamily || Styles.UI_SERIF === textFamily) ? '"' + textFamily.replace(/"/g, "\\\"") + '"' : textFamily);
+                context.fontKerning = textKerning;
+
+                // ...
+                return context
+              }
+            };
+
+          // ...
+          function Button(name, content) {
+            var button = arguments.length ? new Component(name) : new Component();
+
+            button.children = new ComponentCollection();
+            button.getComputedStyle().display = Styles.BLOCK | Styles.INLINE;
+            if (arguments.length > 1 && null !== content) button.children.push(content instanceof Image ? content : new Text(content));
+
+            return button
+          }
+
+          function Field(name) {
+            var field = arguments.length ? new Component(name) : new Component();
+
+            // ...
+            field.children = new ComponentCollection();
+            field.getComputedStyle().display = Styles.BLOCK | Styles.INLINE;
+            if (arguments.length > 1 && null !== content) field.children.push(new Text(content));
+
+            return field
+          }
+
+          function Section(name) {
+            var section = arguments.length ? new Component(name) : new Component();
+
+            // ...
+            section.children = new ComponentCollection();
+            section.getComputedStyle().background.color = Colors.TRANSPARENT;
+
+            return section
+          }
+
+        /* Event > ... */
+        GLOBAL.document.body.onresize = resize;
+
+        /* Phase > ... */
+        function resize() {
+          var height = GLOBAL.innerHeight;
+          var width  = GLOBAL.innerWidth;
+
+          // ...
+          Components.ROOT.style.height = height;
+          Components.ROOT.style.width  = width;
+
+          DISPLAY_CANVAS.height                = height;
+          DISPLAY_CANVAS.imageSmoothingEnabled = true;
+          DISPLAY_CANVAS.imageSmoothingQuality = "medium";
+          DISPLAY_CANVAS.style.height          = height + "px";
+          DISPLAY_CANVAS.style.width           = width  + "px";
+          DISPLAY_CANVAS.width                 = width;
+
+          MEMORY_CANVAS.height                = height;
+          MEMORY_CANVAS.imageSmoothingEnabled = false;
+          MEMORY_CANVAS.imageSmoothingQuality = "low";
+          MEMORY_CANVAS.width                 = width;
+
+          // ...
+          update()
+        };
+
+        function update() {
+          MEMORY_CONTEXT.clearRect(0, 0, MEMORY_CANVAS.width, MEMORY_CANVAS.height);
+          Components.drawAll(MEMORY_CONTEXT);
+
+          DISPLAY_CONTEXT.clearRect(0, 0, DISPLAY_CANVAS.width, DISPLAY_CANVAS.height);
+          DISPLAY_CONTEXT.drawImage(MEMORY_CANVAS, 0, 0, MEMORY_CANVAS.width, MEMORY_CANVAS.height);
+
+          // ...
+          requestAnimationFrame(update)
+        }
+
+        /* ... */
+        Components.ROOT = new Section();
+
+        Components.ROOT.addChild(new Section("section"));
+        with (Components.getComponentByName("section")) {
+          addChild(new Section("child"));
+          with (Components.getComponentByName("child"))
+          with (style) {
+            background.color = Colors.GREEN;
+            height           = 150
+          }
+
+          with (style) {
+            background.color = Colors.YELLOW;
+            display          = Styles.BLOCK | Styles.INLINE;
+            height           = 300
+          }
+        }
+
+        Components.ROOT.addChild(new Text("text", "Literally just 'Among Us'"));
+        with (Components.getComponentByName("text")) {
+          with (style) {
+            color = Colors.WHITE
+          }
+        }
+
+        Components.ROOT.addChild(new Shape("shape"));
+        with (Components.getComponentByName("shape")) {
+          points.push(new Point(0, 0), new Point(0, 50), new Point(50, 50), new Point(50, 0));
+          with (style) {
+            background.color = Colors.BLUE;
+            border.top.color = Colors.RED;
+            border.top.width = 2.0;
+            shadow.blur      = 5;
+            shadow.color     = Colors.WHITE;
+            shadow.left      = 7.5;
+            shadow.top       = 7.5
+          }
+        }
+
+        resize();
+        update()
+      // })();
+    </script>
+  </body>
+</html>
