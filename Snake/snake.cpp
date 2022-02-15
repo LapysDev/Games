@@ -26,7 +26,7 @@ class Snake;
 class Object;
 class Wall;
 
-static void draw(void (*)(char[], char));
+static void draw(void (*)(char[], char, unsigned const));
 static void input(char const);
 static void quit();
 inline static void quit(int const);
@@ -149,6 +149,8 @@ class Object {
     inline static std::size_t setRow   (std::size_t const coordinates, std::size_t const row)    { return Object::getColumn(coordinates) + (Game::COLUMN_COUNT * row); }
 
   public:
+    enum Type { FRUIT = 0x1u, FRUIT_BONUS, FRUIT_INVINCIBLE, SNAKE, SNAKE_BODY, SNAKE_TAIL, WALL };
+
     static dimension_t<&Game::Assets::getHeight> const HEIGHT;
     static size_t                                const SIZE;
     static dimension_t<&Game::Assets::getWidth>  const WIDTH;
@@ -235,16 +237,16 @@ std::size_t Game::Assets::getWidth(char const asset[]) {
 }
 
 // ...
-void draw(void (*const function)(char[], char)) {
-  static void (*renderer)(char[], char);
+void draw(void (*const function)(char[], char, unsigned)) {
+  static void (*renderer)(char[], char, unsigned);
   static bool wallsRendered = false;
 
   struct Graphics {
-    inline static void drawAsset(char const asset[], std::size_t const x, std::size_t const y, std::size_t const width, std::size_t height) {
+    inline static void drawAsset(char const asset[], std::size_t const x, std::size_t const y, std::size_t const width, std::size_t height, unsigned const information = 0x0u) {
       static std::size_t const boardWidth = Game::COLUMN_COUNT * Object::SIZE;
 
       for (char *display = Game::DISPLAY + boardWidth + x + 5u + (y * boardWidth) + (y * 4u); height--; ++asset, display += (boardWidth - width) + 4u)
-      for (std::size_t count = width; count; --count) NULL == renderer ? static_cast<void>(*(display++) = *(asset++)) : (*renderer)(display++, *(asset++));
+      for (std::size_t count = width; count; --count) NULL == renderer ? static_cast<void>(*(display++) = *(asset++)) : (*renderer)(display++, *(asset++), information);
     }
   };
 
@@ -259,7 +261,7 @@ void draw(void (*const function)(char[], char)) {
     wallsRendered = true;
 
     for (Wall const *wall = Game::WALLS; NULL != Game::WALLS && wall != Game::WALLS + Game::WALL_COUNT; ++wall)
-    Graphics::drawAsset(Game::Assets::WALL, Object::SIZE * launder(wall) -> column, Object::SIZE * launder(wall) -> row, width, height);
+    Graphics::drawAsset(Game::Assets::WALL, Object::SIZE * launder(wall) -> column, Object::SIZE * launder(wall) -> row, width, height, Object::WALL);
   }
 }
 
@@ -350,8 +352,9 @@ std::size_t const (&randseed(std::size_t const reseed))[4] {
 
 /* Main */
 int main(int, char* arguments[]) {
-  Snake             snake = Snake();
-  std::time_t const time  = std::time(static_cast<std::time_t*>(NULL));
+  bool              automaticSize = true;
+  Snake             snake         = Snake();
+  std::time_t const time          = std::time(static_cast<std::time_t*>(NULL));
 
   // ...
   std::atexit(static_cast<void (*)()>(&quit));
@@ -422,8 +425,55 @@ int main(int, char* arguments[]) {
         }
       }
 
-      **count = value;
+      automaticSize = false;
+      **count       = value;
     }
+  }
+
+  if (automaticSize) {
+    std::size_t columnCount = 0u;
+    std::size_t rowCount    = 0u;
+
+    // ...
+    #if defined(__APPLE__) || defined(__gnu_linux__) || defined(linux) || defined(__linux) || defined(__linux__) || defined(__MACH__) || defined(__unix) || defined(__unix__)
+      /* ... */
+    #elif defined(__NT__) || defined(__TOS_WIN__) || defined(_WIN16) || defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(_WIN32_WCE) || defined(_WIN64) || defined(__WINDOWS__)
+      HANDLE consoleHandle = INVALID_HANDLE_VALUE;
+
+      // ...
+      if (INVALID_HANDLE_VALUE == consoleHandle) consoleHandle = ::CreateFileW(L"CONOUT$", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, static_cast<LPSECURITY_ATTRIBUTES>(NULL), CREATE_NEW | OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, static_cast<HANDLE>(NULL));
+      if (INVALID_HANDLE_VALUE == consoleHandle) consoleHandle = ::GetStdHandle(STD_OUTPUT_HANDLE);
+
+      if (INVALID_HANDLE_VALUE != consoleHandle) {
+        CONSOLE_FONT_INFO          consoleFontInformation;
+        CONSOLE_SCREEN_BUFFER_INFO consoleScreenBufferInformation;
+        int                        systemHeight;
+        int                        systemWidth;
+
+        // ...
+        if (FALSE != ::GetCurrentConsoleFont(consoleHandle, FALSE, &consoleFontInformation) && FALSE != ::GetConsoleScreenBufferInfo(consoleHandle, &consoleScreenBufferInformation)) {
+          ::SetProcessDPIAware();
+          systemHeight = ::GetSystemMetrics(SM_CYSCREEN);
+          systemWidth  = ::GetSystemMetrics(SM_CXSCREEN);
+
+          if (0 != systemHeight && 0 != systemWidth) {
+            std::size_t const consoleHeight = ((consoleFontInformation.dwFontSize.Y * consoleScreenBufferInformation.dwSize.Y) * 7u) / 10u;
+            std::size_t const consoleWidth  = ((consoleFontInformation.dwFontSize.X * consoleScreenBufferInformation.dwSize.X) * 7u) / 10u;
+
+            // ...
+            systemWidth  = (systemWidth  * 7u) / 10u;
+            systemHeight = (systemHeight * 7u) / 10u;
+            rowCount     = (consoleHeight < static_cast<unsigned>(systemHeight) ? consoleHeight : systemHeight) / (Object::SIZE * consoleFontInformation.dwFontSize.Y);
+            columnCount  = (consoleWidth  < static_cast<unsigned>(systemWidth)  ? consoleWidth  : systemWidth)  / (Object::SIZE * consoleFontInformation.dwFontSize.X);
+          }
+        }
+
+        ::CloseHandle(consoleHandle);
+      }
+    #endif
+
+    if (0u != columnCount) Game::COLUMN_COUNT = columnCount;
+    if (0u != rowCount)    Game::ROW_COUNT    = rowCount;
   }
 
   // ...
@@ -487,8 +537,8 @@ int main(int, char* arguments[]) {
     bool        parsing = false;
     std::size_t score   = 0u;
 
-    do {
-      unsigned char digit = 10u;
+    while (true) {
+      unsigned char digit;
       int const character = std::fgetc(Game::SCORE_FILE);
 
       // ...
@@ -496,36 +546,31 @@ int main(int, char* arguments[]) {
       break;
 
       switch (static_cast<char>(character)) {
-        case '0': digit = 0u; break;
-        case '1': digit = 1u; break;
-        case '2': digit = 2u; break;
-        case '3': digit = 3u; break;
-        case '4': digit = 4u; break;
-        case '5': digit = 5u; break;
-        case '6': digit = 6u; break;
-        case '7': digit = 7u; break;
-        case '8': digit = 8u; break;
-        case '9': digit = 9u; break;
+        case '0': digit = 0u; parsing = true; break;
+        case '1': digit = 1u; parsing = true; break;
+        case '2': digit = 2u; parsing = true; break;
+        case '3': digit = 3u; parsing = true; break;
+        case '4': digit = 4u; parsing = true; break;
+        case '5': digit = 5u; parsing = true; break;
+        case '6': digit = 6u; parsing = true; break;
+        case '7': digit = 7u; parsing = true; break;
+        case '8': digit = 8u; parsing = true; break;
+        case '9': digit = 9u; parsing = true; break;
         case ',': invalid = false == parsing; parsing = false; break;
         case ' ': invalid = parsing; break;
-        default : invalid = true;    break;
+        default:  invalid = true;    break;
       }
 
-      if (digit != 10u) {
-        if (false == parsing) {
-          Game::HIGH_SCORE = Game::HIGH_SCORE > score ? Game::HIGH_SCORE : score;
-          parsing = true;
-          score   = 0u;
-        }
+      if (invalid || score > SIZE_MAX / 10u) {
+        Game::HIGH_SCORE = 0u;
+        std::fputs("[" TITLE "] Unable to retrieve high score, time for a new record then!", stderr);
+        if (EOF != std::fclose(Game::SCORE_FILE)) Game::SCORE_FILE = std::fopen("scores.txt", "wb"); // ->> Empty file contents
 
-        if (score > SIZE_MAX / 10u) invalid = true;
-        else score = digit + (score * 10u);
+        break;
       }
-    } while (false == invalid);
 
-    if (invalid) {
-      Game::HIGH_SCORE = 0u;
-      std::fputs("[" TITLE "] Unable to retrieve high score, time for a new record then!", stderr);
+      if (parsing) score = digit + (score * 10u);
+      else { Game::HIGH_SCORE = Game::HIGH_SCORE > score ? Game::HIGH_SCORE : score; score = 0u; }
     }
 
     std::fclose(Game::SCORE_FILE);
@@ -557,18 +602,28 @@ int main(int, char* arguments[]) {
   #elif defined(__NT__) || defined(__TOS_WIN__) || defined(_WIN16) || defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(_WIN32_WCE) || defined(_WIN64) || defined(__WINDOWS__)
     bool         bufferRendering                             = false;
     COORD        consoleCursorPosition                       = COORD();
-    HANDLE       consoleInputHandle                          = INVALID_HANDLE_VALUE;
-    HANDLE       consoleOutputHandle                         = INVALID_HANDLE_VALUE;
+    HANDLE       consoleInputHandle                          = NULL;
+    HANDLE       consoleOutputHandle                         = NULL;
     char const (*consoleTitle)[sizeof(TITLE) / sizeof(char)] = NULL;
     HWND         consoleWindow                               = NULL;
-    bool         rendered                                    = false;
+    bool         pendingInput                                = false;
+    bool         pendingOutput                               = false;
+    bool         pendingRender                               = false;
 
+    struct Graphics {
+      inline static void render(char display[], char const pixel, unsigned const information) {
+        static_cast<void>(information); // Object::FRUIT, Object::FRUIT_BONUS, Object::FRUIT_INVINCIBLE, Object::SNAKE, Object::SNAKE_BODY, Object::SNAKE_TAIL, Object::WALL
+        *display = pixel;
+      }
+    };
+
+    // ...
     while (true) {
-      if (INVALID_HANDLE_VALUE == consoleInputHandle)
-      consoleInputHandle = ::GetStdHandle(STD_INPUT_HANDLE);
+      if (INVALID_HANDLE_VALUE == consoleInputHandle  || NULL == consoleInputHandle)  consoleInputHandle = ::CreateFileW(L"CONIN$", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, static_cast<LPSECURITY_ATTRIBUTES>(NULL), CREATE_NEW | OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, static_cast<HANDLE>(NULL));
+      if (INVALID_HANDLE_VALUE == consoleOutputHandle || NULL == consoleOutputHandle) consoleOutputHandle = ::CreateFileW(L"CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, static_cast<LPSECURITY_ATTRIBUTES>(NULL), CREATE_NEW | OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, static_cast<HANDLE>(NULL));
 
-      if (INVALID_HANDLE_VALUE == consoleOutputHandle)
-      consoleOutputHandle = ::GetStdHandle(STD_OUTPUT_HANDLE);
+      if (INVALID_HANDLE_VALUE == consoleInputHandle)  consoleInputHandle  = ::GetStdHandle(STD_INPUT_HANDLE);
+      if (INVALID_HANDLE_VALUE == consoleOutputHandle) consoleOutputHandle = ::GetStdHandle(STD_OUTPUT_HANDLE);
 
       // ...
       if (NULL == consoleTitle) {
@@ -582,12 +637,12 @@ int main(int, char* arguments[]) {
       }
 
       // ...
-      if (INVALID_HANDLE_VALUE == consoleInputHandle)  continue;
-      if (INVALID_HANDLE_VALUE == consoleOutputHandle) continue;
+      if (INVALID_HANDLE_VALUE == consoleInputHandle  || NULL == consoleInputHandle)  { if (false == pendingInput)  { pendingInput  = true; std::fputs("[" TITLE "] Unable to render game graphics", stderr); } continue; }
+      if (INVALID_HANDLE_VALUE == consoleOutputHandle || NULL == consoleOutputHandle) { if (false == pendingOutput) { pendingOutput = true; std::fputs("[" TITLE "] Unable to render game graphics", stderr); } continue; }
       if (bufferRendering) ::WaitForSingleObject(consoleInputHandle, INFINITE);
 
       if (false == bufferRendering || WAIT_OBJECT_0 == ::WaitForSingleObject(consoleInputHandle, 0u)) {
-        static INPUT_RECORD  inputRecord;
+        static unsigned char inputRecord[sizeof(INPUT_RECORD)];
         static std::size_t   inputRecordCapacity = 0u;
         DWORD                inputRecordCount    = 0u;
         static INPUT_RECORD *inputRecords        = NULL;
@@ -596,9 +651,9 @@ int main(int, char* arguments[]) {
         if (FALSE != ::GetNumberOfConsoleInputEvents(consoleInputHandle, &inputRecordCount))
         if (0u != inputRecordCount) {
           if (inputRecordCapacity < inputRecordCount) {
-            void *const allocation = std::realloc(inputRecords == &inputRecord ? NULL : inputRecords, inputRecordCount * sizeof(INPUT_RECORD));
+            void *const allocation = std::realloc(inputRecords == reinterpret_cast<INPUT_RECORD*>(&inputRecord) ? NULL : inputRecords, inputRecordCount * sizeof(INPUT_RECORD));
 
-            if (NULL == allocation) { inputRecordCapacity = inputRecordCount = 1u; inputRecords = &inputRecord; }
+            if (NULL == allocation) { inputRecordCapacity = inputRecordCount = 1u; inputRecords = reinterpret_cast<INPUT_RECORD*>(&inputRecord); }
             else { inputRecordCapacity = inputRecordCount; inputRecords = static_cast<INPUT_RECORD*>(allocation); }
           }
 
@@ -629,17 +684,16 @@ int main(int, char* arguments[]) {
 
           // ...
           if (NULL == Game::DISPLAY) continue;
-          struct bruh { static void sus(char display[], char const pixel) { *display = pixel; } };
-          draw(&bruh::sus);
+          draw(&Graphics::render);
 
           if (FALSE != ::WriteConsoleA(consoleOutputHandle, Game::DISPLAY, Game::DISPLAY_CAPACITY, &charactersWritten, static_cast<LPVOID>(NULL))) {
-            rendered = true;
+            pendingRender = false;
             continue;
           }
         }
 
-        if (rendered) {
-          rendered = false;
+        if (false == pendingRender) {
+          pendingRender = true;
           std::fputs("[" TITLE "] Unable to render game graphics", stderr);
         }
       }
