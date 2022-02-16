@@ -1,13 +1,11 @@
 /* Import > ... */
-#include <cctype>
-#include <climits>
-#include <csignal>
-#include <cstddef>
-#include <cstdio>
-#include <cstdlib>
-#include <ctime>
-#include <new>
-#include <stdint.h>
+#include <csignal>  // --> std::signal(…)
+#include <cstddef>  // --> std::size_t
+#include <cstdio>   // --> std::fclose(…), std::fgetc(…), std::fopen(…), std::fprintf(…), std::fputc(…), std::fputs(…), std::setbuf(…)
+#include <cstdlib>  // --> std::calloc(…), std::free(…)
+#include <ctime>    // --> std::time(…), std::time_t
+#include <new>      // --> std::launder(…), new (…) T{…}
+#include <stdint.h> // --> uint_least32_t
 
 #if defined(__APPLE__) || defined(__gnu_linux__) || defined(linux) || defined(__linux) || defined(__linux__) || defined(__MACH__) || defined(__unix) || defined(__unix__)
 # include <conio.h>
@@ -18,25 +16,25 @@
 # include <windows.h>
 #endif
 
-/* Definition > ... */
+/* Definition */
 #define TITLE "Snake"
 
-class Fruit;
-class Snake;
-class Object;
-class Wall;
+/* Namespace */
+namespace Game {
+  class Fruit;
+  class Snake;
+  class Object;
+  class Wall;
 
-static void draw(void (*)(char[], char, unsigned const));
-static void input(char const);
-static void quit();
-inline static void quit(int const);
-static std::size_t randint(std::size_t const);
-static std::size_t const (&randseed(std::size_t const = 0u))[4];
+  static void draw(void (*)(char[], char, unsigned));
+  static void input(char const);
+  template <typename type> inline static type* launder(type* const);
+  static void quit();
+  inline static void quit(int const);
+  static std::size_t randint(std::size_t const);
+  static std::size_t const (&randseed(std::size_t const = 0u))[4];
+}
 
-template <typename type>
-inline static type* launder(type* const);
-
-/* Namespace > ... */
 namespace Game {
   namespace Assets {
     static char const BORDER_BOTTOM = '_';
@@ -63,12 +61,13 @@ namespace Game {
     static char const WALL               [] = "##" "\0" "##" "\0";
 
     // ...
+    inline void draw(void (*const)(char[], char, unsigned), char const[], std::size_t const, std::size_t const, std::size_t const, std::size_t, unsigned const);
     inline std::size_t getHeight(char const[]);
-    inline std::size_t getWidth (char const[]);
+    inline std::size_t getWidth(char const[]);
   }
 
   static char const *const ASSETS[]         = {Assets::BONUS_FRUIT, Assets::FRUIT, Assets::INVINCIBLE_FRUIT, Assets::SNAKE_EAST_TO_NORTH, Assets::SNAKE_EAST_TO_SOUTH, Assets::SNAKE_HEAD, Assets::SNAKE_NORTH_TO_EAST, Assets::SNAKE_NORTH_TO_WEST, Assets::SNAKE_SOUTH_TO_EAST, Assets::SNAKE_SOUTH_TO_WEST, Assets::SNAKE_TAIL, Assets::SNAKE_WEST_TO_NORTH, Assets::SNAKE_WEST_TO_SOUTH, Assets::WALL};
-  static std::size_t       COLUMN_COUNT     = 32u;
+  static std::size_t       COLUMN_COUNT     = 48u;
   static std::size_t       CURRENT_SCORE    = 0u;
   static char             *DISPLAY          = NULL;
   static std::size_t       DISPLAY_CAPACITY = 0u;
@@ -76,9 +75,9 @@ namespace Game {
   static std::size_t       FRUIT_COUNT      = 0u;
   static Fruit            *FRUITS           = NULL;
   static std::size_t       HIGH_SCORE       = 0u;
-  static std::size_t       ROW_COUNT        = 8u;
+  static std::size_t       ROW_COUNT        = 12u;
   static FILE             *SCORE_FILE       = NULL;
-  static Snake            *SNAKE            = NULL;
+  static Snake  const     *SNAKE            = NULL;
   static std::size_t       WALL_COUNT       = 0u;
   static Wall             *WALLS            = NULL;
 
@@ -106,9 +105,13 @@ namespace Game {
          "\r\n" "||" " [%u, %u] in [%u, %u]"
     "%a" "\r\n" "GAMEOVER !!" "\r\n\n" "  %S" "\r\n" "  Save your score? [Y]es / [N]o" "\r\n" "%a"
   };
-
-  // ...
 }
+
+/* Alias > ... */
+using Game::Fruit;
+using Game::Object;
+using Game::Snake;
+using Game::Wall;
 
 /* Class > ... */
 class Object {
@@ -127,8 +130,8 @@ class Object {
         static std::size_t size = 0u;
 
         if (0u == size)
-        for (char const *const *asset = Game::ASSETS; asset != Game::ASSETS + (sizeof(Game::ASSETS) / sizeof(char const*)); ++asset) {
-          std::size_t const assetSize = (*assetSizeAccessor)(*asset);
+        for (char const *const *asset = Game::ASSETS + (sizeof(Game::ASSETS) / sizeof(char const*)); Game::ASSETS != asset; ) {
+          std::size_t const assetSize = (*assetSizeAccessor)(*--asset);
           size = assetSize > size ? assetSize : size;
         }
 
@@ -181,8 +184,8 @@ class Object {
           struct {
             friend class TailCollection;
 
-            private: void *value;
-            public: inline operator std::size_t() const { return NULL != this -> value ? *launder(static_cast<std::size_t*>(this -> value)) : 0u; }
+            private: mutable void *value;
+            public: inline operator std::size_t() const { return NULL != this -> value ? *Game::launder(static_cast<std::size_t*>(this -> value)) : 0u; }
           } length;
 
           inline operator Tail*() const {
@@ -191,7 +194,7 @@ class Object {
 
             for (unsigned char *value = static_cast<unsigned char*>(this -> length.value) + sizeof(std::size_t); ; ++value) {
               if (0u == static_cast<std::size_t>(value - static_cast<unsigned char*>(this -> length.value)) % sizeof(Tail))
-              return launder(reinterpret_cast<Tail*>(value));
+              return Game::launder(reinterpret_cast<Tail*>(value));
             }
           }
       } tail;
@@ -201,58 +204,23 @@ class Object {
   class Wall : public Object {};
 
 /* Function */
-std::size_t Game::Assets::getHeight(char const asset[]) {
-  std::size_t height = 0u;
+void Game::Assets::draw(void (*const renderer)(char[], char, unsigned), char const asset[], std::size_t const x, std::size_t const y, std::size_t const width, std::size_t height, unsigned const type) {
+  static std::size_t const boardWidth = Game::COLUMN_COUNT * Object::SIZE;
 
   // ...
-  while (true) {
-    if ('\0' == *(asset++)) {
-      ++height;
-      if ('\0' == *asset) break;
-    }
-  }
-
-  return height;
+  for (char *display = Game::DISPLAY + boardWidth + x + 5u + (y * boardWidth) + (y * 4u); height--; ++asset, display += (boardWidth - width) + 4u)
+  for (std::size_t count = width; count; --count) (*renderer)(display++, *(asset++), type); // --> *(display++) = *(asset++);
 }
 
-// ...
-std::size_t Game::Assets::getWidth(char const asset[]) {
-  std::size_t width = 0u;
-
-  // ...
-  if (0u == width)
-  for (std::size_t count = 0u; ; ) {
-    if ('\0' == *(asset++)) {
-      width = count > width ? count : width;
-      count = 0u;
-
-      if ('\0' == *asset) break;
-      continue;
-    }
-
-    ++count;
-  }
-
-  return width;
-}
+// ... --- MINIFY (Lapys)
+std::size_t Game::Assets::getHeight(char const asset[]) { for (std::size_t height = 0u; ; ) if ('\0' == *(asset++)) { ++height; if ('\0' == *asset) return height; } }
+std::size_t Game::Assets::getWidth (char const asset[]) { for (std::size_t count = 0u, width = 0u; ; ) { if ('\0' == *(asset++)) { width = count > width ? count : width; count = 0u; if ('\0' == *asset) { return width; } continue; } ++count; } }
 
 // ...
-void draw(void (*const function)(char[], char, unsigned)) {
-  static void (*renderer)(char[], char, unsigned);
+void Game::draw(void (*const renderer)(char[], char, unsigned)) {
   static bool wallsRendered = false;
 
-  struct Graphics {
-    inline static void drawAsset(char const asset[], std::size_t const x, std::size_t const y, std::size_t const width, std::size_t height, unsigned const information = 0x0u) {
-      static std::size_t const boardWidth = Game::COLUMN_COUNT * Object::SIZE;
-
-      for (char *display = Game::DISPLAY + boardWidth + x + 5u + (y * boardWidth) + (y * 4u); height--; ++asset, display += (boardWidth - width) + 4u)
-      for (std::size_t count = width; count; --count) NULL == renderer ? static_cast<void>(*(display++) = *(asset++)) : (*renderer)(display++, *(asset++), information);
-    }
-  };
-
   // ...
-  renderer = function;
-
   if (false == wallsRendered) {
     std::size_t const height = Game::Assets::getHeight(Game::Assets::WALL);
     std::size_t const width  = Game::Assets::getWidth(Game::Assets::WALL);
@@ -260,25 +228,27 @@ void draw(void (*const function)(char[], char, unsigned)) {
     // ...
     wallsRendered = true;
 
-    for (Wall const *wall = Game::WALLS; NULL != Game::WALLS && wall != Game::WALLS + Game::WALL_COUNT; ++wall)
-    Graphics::drawAsset(Game::Assets::WALL, Object::SIZE * launder(wall) -> column, Object::SIZE * launder(wall) -> row, width, height, Object::WALL);
+    for (Wall const *wall = Game::WALLS; wall != Game::WALLS + Game::WALL_COUNT; ++wall)
+    Game::Assets::draw(renderer, Game::Assets::WALL, Object::SIZE * Game::launder(wall) -> column, Object::SIZE * Game::launder(wall) -> row, width, height, Object::WALL);
   }
 }
 
 // ...
-void input(char const key) {
-  std::printf("[" TITLE "] '%c'" "\r\n", key);
+void Game::input(char const key) {
+  // std::printf("[" TITLE "] '%c'" "\r\n", key);
   switch (key) {
     case 'A': break;
     case 'D': break;
     case 'S': break;
     case 'W': break;
+
+    case 'Q': break;
   }
 }
 
 // ...
 template <typename type>
-type* launder(type* const pointer) {
+type* Game::launder(type* const pointer) {
   #ifdef __cpp_lib_launder
     return std::launder(pointer);
   #else
@@ -287,36 +257,29 @@ type* launder(type* const pointer) {
 }
 
 // ...
-void quit() {
+void Game::quit() {
   std::free(Game::DISPLAY);
-  Game::DISPLAY = NULL;
-
   std::free(Game::WALLS);
-  Game::WALLS = NULL;
-
-  if (NULL != Game::SCORE_FILE) {
-    std::fclose(Game::SCORE_FILE);
-    Game::SCORE_FILE = NULL;
-  }
+  if (NULL != Game::SCORE_FILE) std::fclose(Game::SCORE_FILE);
 
   // ...
   std::fputs("\r\n" "[" TITLE "] Program terminating", stderr);
   std::exit(EXIT_SUCCESS);
 }
 
-void quit(int const signal) {
+void Game::quit(int const signal) {
   switch (signal) {
     case SIGINT : std::fputs("\r\n" "[" TITLE "] Program interrupted",                stderr); break;
     case SIGSEGV: std::fputs("\r\n" "[" TITLE "] Program requested unpermitted data", stderr); break;
     default: break;
   }
 
-  quit();
+  Game::quit();
 }
 
 // ...
-std::size_t randint(std::size_t const range) {
-  std::size_t (&seeds)[4] = const_cast<std::size_t (&)[4]>(randseed());
+std::size_t Game::randint(std::size_t const range) {
+  std::size_t (&seeds)[4] = const_cast<std::size_t (&)[4]>(Game::randseed());
   std::size_t const control = seeds[1] << 17u;
   std::size_t const random  = seeds[0] + seeds[3];
 
@@ -332,12 +295,11 @@ std::size_t randint(std::size_t const range) {
   return random % range;
 }
 
-std::size_t const (&randseed(std::size_t const reseed))[4] {
+std::size_t const (&Game::randseed(std::size_t const reseed))[4] {
   static std::size_t seeds[4] = {0u, 0x2A430C43u, 0u, 0xDE83A17u}; // ->> pre-seeded to `0u`
 
   // ...
-  if (0u != reseed)
-  for (std::size_t *seed = seeds + 4, state; seed != seeds; ) {
+  for (std::size_t *seed = seeds + 4, state; 0u != reseed && seed != seeds; ) {
     state  = reseed + (0x9E3779B9u * ((seed - seeds) >> 1u));
     state ^= state >> 15u; state *= 0x85EBCA6Bu;
     state ^= state >> 13u; state *= 0xC2B2AE35u;
@@ -352,17 +314,15 @@ std::size_t const (&randseed(std::size_t const reseed))[4] {
 
 /* Main */
 int main(int, char* arguments[]) {
-  bool              automaticSize = true;
-  Snake             snake         = Snake();
-  std::time_t const time          = std::time(static_cast<std::time_t*>(NULL));
+  std::time_t const time = std::time(static_cast<std::time_t*>(NULL));
 
   // ...
-  std::atexit(static_cast<void (*)()>(&quit));
+  std::atexit(static_cast<void (*)()>(&Game::quit));
   std::setbuf(stderr, NULL);
-  std::signal(SIGINT,  static_cast<void (*)(int)>(&quit));
-  std::signal(SIGSEGV, static_cast<void (*)(int)>(&quit));
+  std::signal(SIGINT,  static_cast<void (*)(int)>(&Game::quit));
+  std::signal(SIGSEGV, static_cast<void (*)(int)>(&Game::quit));
 
-  randseed(time == static_cast<std::time_t>(-1) ? 0u : static_cast<std::size_t>(time));
+  Game::randseed(time == static_cast<std::time_t>(-1) ? 0u : static_cast<std::size_t>(time));
 
   // ...
   if (NULL != arguments[1]) {
@@ -371,10 +331,9 @@ int main(int, char* arguments[]) {
       return EXIT_SUCCESS;
     }
 
-    else for (std::size_t *const counts[] = {&Game::COLUMN_COUNT, &Game::ROW_COUNT}, *const *count = counts; count != counts + (sizeof(counts) / sizeof(std::size_t*)); ++count) {
-      bool        invalid  = false;
-      bool        overflow = false;
-      std::size_t value    = 0u;
+    for (std::size_t *const counts[] = {&Game::COLUMN_COUNT, &Game::ROW_COUNT}, *const *count = counts; count != counts + (sizeof(counts) / sizeof(std::size_t*)); ++count) {
+      bool        invalid = false;
+      std::size_t value   = 0u;
 
       // ...
       for (char *argument = *++arguments; '\0' != *argument; ++argument) {
@@ -395,10 +354,7 @@ int main(int, char* arguments[]) {
           default: invalid = true; break;
         }
 
-        overflow = value > SIZE_MAX / 10u;
-        value    = digit + (value * 10u);
-
-        if (invalid || overflow) {
+        if (invalid || value > SIZE_MAX / 10u) {
           std::fprintf(stderr, invalid ? "[" TITLE "] Invalid %5.6s specified: `" : "[" TITLE "] The %5.6s specified is too large: `", &Game::COLUMN_COUNT == *count ? "width" : "height");
 
           for (argument = *arguments; '\0' != *argument; std::fputc(*argument++, stderr))
@@ -423,18 +379,15 @@ int main(int, char* arguments[]) {
           std::fprintf(stderr, invalid ? "` (expected a contiguous collection of digits between 0-9)" : "` (value should be smaller than `%lu%2s`)", static_cast<unsigned long>(SIZE_MAX), "zu");
           return EXIT_SUCCESS;
         }
+
+        value = digit + (value * 10u);
       }
 
-      automaticSize = false;
-      **count       = value;
+      **count = value;
     }
   }
 
-  if (automaticSize) {
-    std::size_t columnCount = 0u;
-    std::size_t rowCount    = 0u;
-
-    // ...
+  if (0u == Game::COLUMN_COUNT && 0u == Game::ROW_COUNT) {
     #if defined(__APPLE__) || defined(__gnu_linux__) || defined(linux) || defined(__linux) || defined(__linux__) || defined(__MACH__) || defined(__unix) || defined(__unix__)
       /* ... */
     #elif defined(__NT__) || defined(__TOS_WIN__) || defined(_WIN16) || defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(_WIN32_WCE) || defined(_WIN64) || defined(__WINDOWS__)
@@ -463,17 +416,14 @@ int main(int, char* arguments[]) {
             // ...
             systemWidth  = (systemWidth  * 7u) / 10u;
             systemHeight = (systemHeight * 7u) / 10u;
-            rowCount     = (consoleHeight < static_cast<unsigned>(systemHeight) ? consoleHeight : systemHeight) / (Object::SIZE * consoleFontInformation.dwFontSize.Y);
-            columnCount  = (consoleWidth  < static_cast<unsigned>(systemWidth)  ? consoleWidth  : systemWidth)  / (Object::SIZE * consoleFontInformation.dwFontSize.X);
+            Game::ROW_COUNT    = (consoleHeight < static_cast<unsigned>(systemHeight) ? consoleHeight : systemHeight) / (Object::SIZE * consoleFontInformation.dwFontSize.Y);
+            Game::COLUMN_COUNT = (consoleWidth  < static_cast<unsigned>(systemWidth)  ? consoleWidth  : systemWidth)  / (Object::SIZE * consoleFontInformation.dwFontSize.X);
           }
         }
 
         ::CloseHandle(consoleHandle);
       }
     #endif
-
-    if (0u != columnCount) Game::COLUMN_COUNT = columnCount;
-    if (0u != rowCount)    Game::ROW_COUNT    = rowCount;
   }
 
   // ...
@@ -486,8 +436,8 @@ int main(int, char* arguments[]) {
 
   Game::DISPLAY    = static_cast<char*>(std::calloc(Game::DISPLAY_CAPACITY + 1u, sizeof(char)));
   Game::SCORE_FILE = std::fopen("scores.txt", "rb");
-  Game::SNAKE      = &snake;
-  Game::WALL_COUNT = randint(((Game::COLUMN_COUNT * Game::ROW_COUNT) * 1u) / 10u);
+  Game::SNAKE      = &static_cast<Snake const&>(Snake());
+  Game::WALL_COUNT = Game::randint(((Game::COLUMN_COUNT * Game::ROW_COUNT) * 1u) / 10u);
   Game::WALLS      = static_cast<Wall*>(0u == Game::WALL_COUNT ? NULL : std::malloc(Game::WALL_COUNT * sizeof(Wall)));
 
   static_cast<void>(Game::CURRENT_SCORE);
@@ -501,35 +451,30 @@ int main(int, char* arguments[]) {
     return EXIT_SUCCESS;
   }
 
-  else {
-    char *pixel = Game::DISPLAY + Game::DISPLAY_CAPACITY;
+  *(Game::DISPLAY += Game::DISPLAY_CAPACITY) = '\0';
 
-    // ...
-    *pixel = '\0';
+  *--Game::DISPLAY = '\n';
+  *--Game::DISPLAY = '\r';
+  *--Game::DISPLAY = Game::Assets::CORNERS[3];
+    for (std::size_t count = Game::COLUMN_COUNT * Object::SIZE; count; --count)
+    *--Game::DISPLAY = Game::Assets::BORDER_BOTTOM;
+  *--Game::DISPLAY = Game::Assets::CORNERS[2];
 
-    *--pixel = '\n';
-    *--pixel = '\r';
-    *--pixel = Game::Assets::CORNERS[3];
-      for (std::size_t count = Game::COLUMN_COUNT * Object::SIZE; count; --count)
-      *--pixel = Game::Assets::BORDER_BOTTOM;
-    *--pixel = Game::Assets::CORNERS[2];
-
-    for (std::size_t row = Game::ROW_COUNT * Object::SIZE; row; --row) {
-      *--pixel = '\n';
-      *--pixel = '\r';
-      *--pixel = Game::Assets::BORDER_RIGHT;
-        for (std::size_t column = Game::COLUMN_COUNT * Object::SIZE; column; --column)
-        *--pixel = randint(Game::COLUMN_COUNT * Game::ROW_COUNT) < ((Game::COLUMN_COUNT * Game::ROW_COUNT) * 5u) / 100u ? Game::Assets::DECORATIONS[randint(sizeof(Game::Assets::DECORATIONS) / sizeof(char))] : Game::Assets::FLOOR;
-      *--pixel = Game::Assets::BORDER_LEFT;
-    }
-
-    *--pixel = '\n';
-    *--pixel = '\r';
-    *--pixel = Game::Assets::CORNERS[1];
-      for (std::size_t count = Game::COLUMN_COUNT * Object::SIZE; count; --count)
-      *--pixel = Game::Assets::BORDER_TOP;
-    *--pixel = Game::Assets::CORNERS[0];
+  for (std::size_t row = Game::ROW_COUNT * Object::SIZE; row; --row) {
+    *--Game::DISPLAY = '\n';
+    *--Game::DISPLAY = '\r';
+    *--Game::DISPLAY = Game::Assets::BORDER_RIGHT;
+      for (std::size_t column = Game::COLUMN_COUNT * Object::SIZE; column; --column)
+      *--Game::DISPLAY = Game::randint(Game::COLUMN_COUNT * Game::ROW_COUNT) < ((Game::COLUMN_COUNT * Game::ROW_COUNT) * 5u) / 100u ? Game::Assets::DECORATIONS[Game::randint(sizeof(Game::Assets::DECORATIONS) / sizeof(char))] : Game::Assets::FLOOR;
+    *--Game::DISPLAY = Game::Assets::BORDER_LEFT;
   }
+
+  *--Game::DISPLAY = '\n';
+  *--Game::DISPLAY = '\r';
+  *--Game::DISPLAY = Game::Assets::CORNERS[1];
+    for (std::size_t count = Game::COLUMN_COUNT * Object::SIZE; count; --count)
+    *--Game::DISPLAY = Game::Assets::BORDER_TOP;
+  *--Game::DISPLAY = Game::Assets::CORNERS[0];
 
   // [Score]
   if (NULL != Game::SCORE_FILE) {
@@ -538,8 +483,8 @@ int main(int, char* arguments[]) {
     std::size_t score   = 0u;
 
     while (true) {
-      unsigned char digit;
       int const character = std::fgetc(Game::SCORE_FILE);
+      unsigned char digit;
 
       // ...
       if (EOF == character)
@@ -569,8 +514,13 @@ int main(int, char* arguments[]) {
         break;
       }
 
-      if (parsing) score = digit + (score * 10u);
-      else { Game::HIGH_SCORE = Game::HIGH_SCORE > score ? Game::HIGH_SCORE : score; score = 0u; }
+      if (parsing) {
+        score = digit + (score * 10u);
+        continue;
+      }
+
+      Game::HIGH_SCORE = Game::HIGH_SCORE > score ? Game::HIGH_SCORE : score;
+      score = 0u;
     }
 
     std::fclose(Game::SCORE_FILE);
@@ -581,18 +531,16 @@ int main(int, char* arguments[]) {
   if (NULL == Game::WALLS)
   Game::WALL_COUNT = 0u;
 
-  for (Wall *wall = Game::WALLS; NULL != Game::WALLS && wall != Game::WALLS + Game::WALL_COUNT; ++wall) {
-    Wall *const currentWall = new (wall) Wall();
+  for (Wall *wall = Game::WALLS + Game::WALL_COUNT; Game::WALLS != wall; ) {
+    Wall *const currentWall = new (--wall) Wall();
 
     for (bool recoordinate = true; recoordinate; ) {
-      currentWall -> column = randint(Game::COLUMN_COUNT);
-      currentWall -> row    = randint(Game::ROW_COUNT);
+      currentWall -> column = Game::randint(Game::COLUMN_COUNT);
+      currentWall -> row    = Game::randint(Game::ROW_COUNT);
       recoordinate          = false;
 
-      for (Wall const *recentWall = wall; Game::WALLS != recentWall && (false == recoordinate); ) {
-        --recentWall;
-        recoordinate = (wall -> column == launder(recentWall) -> column) && (wall -> row == launder(recentWall) -> row);
-      }
+      for (Wall const *recentWall = wall + 1; recentWall != Game::WALLS + Game::WALL_COUNT && false == recoordinate; ++recentWall)
+      recoordinate = (wall -> column == Game::launder(recentWall) -> column) && (wall -> row == Game::launder(recentWall) -> row);
     }
   }
 
@@ -600,26 +548,64 @@ int main(int, char* arguments[]) {
   #if defined(__APPLE__) || defined(__gnu_linux__) || defined(linux) || defined(__linux) || defined(__linux__) || defined(__MACH__) || defined(__unix) || defined(__unix__)
     /* ... */
   #elif defined(__NT__) || defined(__TOS_WIN__) || defined(_WIN16) || defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(_WIN32_WCE) || defined(_WIN64) || defined(__WINDOWS__)
-    bool         bufferRendering                             = false;
-    COORD        consoleCursorPosition                       = COORD();
-    HANDLE       consoleInputHandle                          = NULL;
-    HANDLE       consoleOutputHandle                         = NULL;
-    char const (*consoleTitle)[sizeof(TITLE) / sizeof(char)] = NULL;
-    HWND         consoleWindow                               = NULL;
-    bool         pendingInput                                = false;
-    bool         pendingOutput                               = false;
-    bool         pendingRender                               = false;
+    static COORD               consoleCursorPosition  = COORD();
+    HANDLE                     consoleInputHandle     = NULL;
+    static HANDLE              consoleOutputHandle    = NULL;
+    CONSOLE_SCREEN_BUFFER_INFO consoleScreenBufferInformation;
+    char const         *const *consoleTitle           = NULL;
+    HWND                       consoleWindow          = NULL;
+    bool                       pendingAttributes      = true;
+    bool                       pendingBufferedRender  = false;
+    static bool                pendingCompletedRender = false;
+    static bool                pendingColoredRender   = false;
+    bool                       pendingInput           = false;
+    bool                       pendingOutput          = false;
 
     struct Graphics {
-      inline static void render(char display[], char const pixel, unsigned const information) {
-        static_cast<void>(information); // Object::FRUIT, Object::FRUIT_BONUS, Object::FRUIT_INVINCIBLE, Object::SNAKE, Object::SNAKE_BODY, Object::SNAKE_TAIL, Object::WALL
-        *display = pixel;
+      inline static void render(char pixelDisplay[], char const pixel, unsigned const information) {
+        if (pendingCompletedRender) {
+          static std::size_t const boardWidth = Game::COLUMN_COUNT * Object::SIZE;
+
+          // ...
+          consoleCursorPosition.X = 0;
+          consoleCursorPosition.Y = 0;
+
+          for (char const *display = Game::DISPLAY + 5u + boardWidth; ; ++consoleCursorPosition.Y, display += 4u + boardWidth)
+          if (display > pixelDisplay) {
+            consoleCursorPosition.X  = (4u + boardWidth) - (display - pixelDisplay);
+            consoleCursorPosition.Y -= 1;
+
+            break;
+          }
+
+          if (FALSE != ::SetConsoleCursorPosition(consoleOutputHandle, consoleCursorPosition)) {
+            DWORD charactersWritten;
+
+            // ...
+            switch (information) {
+              case Object::FRUIT:            pendingColoredRender = FALSE == ::SetConsoleTextAttribute(consoleOutputHandle, FOREGROUND_INTENSITY | FOREGROUND_RED); break;
+              case Object::FRUIT_BONUS:      pendingColoredRender = FALSE == ::SetConsoleTextAttribute(consoleOutputHandle, FOREGROUND_INTENSITY | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);  break;
+              case Object::FRUIT_INVINCIBLE: pendingColoredRender = FALSE == ::SetConsoleTextAttribute(consoleOutputHandle, FOREGROUND_INTENSITY | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);  break;
+              case Object::SNAKE:            pendingColoredRender = FALSE == ::SetConsoleTextAttribute(consoleOutputHandle, FOREGROUND_INTENSITY | FOREGROUND_GREEN);                                     break;
+              case Object::SNAKE_BODY:       pendingColoredRender = FALSE == ::SetConsoleTextAttribute(consoleOutputHandle, FOREGROUND_GREEN);                                                            break;
+              case Object::SNAKE_TAIL:       pendingColoredRender = FALSE == ::SetConsoleTextAttribute(consoleOutputHandle, FOREGROUND_BLUE | FOREGROUND_GREEN);                                          break;
+              case Object::WALL:             pendingColoredRender = FALSE == ::SetConsoleTextAttribute(consoleOutputHandle, COMMON_LVB_UNDERSCORE | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED); break;
+            }
+
+            if (false == pendingColoredRender && FALSE != ::FillConsoleOutputCharacterA(consoleOutputHandle, pixel, 1u, consoleCursorPosition, &charactersWritten))
+            return;
+          }
+
+          pendingColoredRender = true;
+        }
+
+        *pixelDisplay = pixel;
       }
     };
 
     // ...
     while (true) {
-      if (INVALID_HANDLE_VALUE == consoleInputHandle  || NULL == consoleInputHandle)  consoleInputHandle = ::CreateFileW(L"CONIN$", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, static_cast<LPSECURITY_ATTRIBUTES>(NULL), CREATE_NEW | OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, static_cast<HANDLE>(NULL));
+      if (INVALID_HANDLE_VALUE == consoleInputHandle  || NULL == consoleInputHandle)  consoleInputHandle  = ::CreateFileW(L"CONIN$", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, static_cast<LPSECURITY_ATTRIBUTES>(NULL), CREATE_NEW | OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, static_cast<HANDLE>(NULL));
       if (INVALID_HANDLE_VALUE == consoleOutputHandle || NULL == consoleOutputHandle) consoleOutputHandle = ::CreateFileW(L"CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, static_cast<LPSECURITY_ATTRIBUTES>(NULL), CREATE_NEW | OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, static_cast<HANDLE>(NULL));
 
       if (INVALID_HANDLE_VALUE == consoleInputHandle)  consoleInputHandle  = ::GetStdHandle(STD_INPUT_HANDLE);
@@ -628,20 +614,24 @@ int main(int, char* arguments[]) {
       // ...
       if (NULL == consoleTitle) {
         if (FALSE != ::SetConsoleTitle(TITLE))
-        consoleTitle = &TITLE;
+        consoleTitle = &static_cast<char const* const&>(TITLE);
       }
 
       if (NULL == consoleTitle) {
         if (NULL == consoleWindow) consoleWindow = ::GetConsoleWindow();
-        if (NULL != consoleWindow) { if (FALSE != ::SetWindowTextA(consoleWindow, TITLE)) consoleTitle = &TITLE; }
+        if (NULL != consoleWindow) { if (FALSE != ::SetWindowTextA(consoleWindow, TITLE)) consoleTitle = &static_cast<char const* const&>(TITLE); }
       }
 
       // ...
-      if (INVALID_HANDLE_VALUE == consoleInputHandle  || NULL == consoleInputHandle)  { if (false == pendingInput)  { pendingInput  = true; std::fputs("[" TITLE "] Unable to render game graphics", stderr); } continue; }
-      if (INVALID_HANDLE_VALUE == consoleOutputHandle || NULL == consoleOutputHandle) { if (false == pendingOutput) { pendingOutput = true; std::fputs("[" TITLE "] Unable to render game graphics", stderr); } continue; }
-      if (bufferRendering) ::WaitForSingleObject(consoleInputHandle, INFINITE);
+      if (pendingAttributes)
+      pendingAttributes = FALSE == ::GetConsoleScreenBufferInfo(consoleOutputHandle, &consoleScreenBufferInformation);
 
-      if (false == bufferRendering || WAIT_OBJECT_0 == ::WaitForSingleObject(consoleInputHandle, 0u)) {
+      // ...
+      if (INVALID_HANDLE_VALUE == consoleInputHandle  || NULL == consoleInputHandle)  { if (false == pendingInput)  { pendingInput  = true; std::fputs("[" TITLE "] Unable to parse player input",   stderr); } continue; }
+      if (INVALID_HANDLE_VALUE == consoleOutputHandle || NULL == consoleOutputHandle) { if (false == pendingOutput) { pendingOutput = true; std::fputs("[" TITLE "] Unable to render game graphics", stderr); } continue; }
+      if (pendingBufferedRender) ::WaitForSingleObject(consoleInputHandle, INFINITE);
+
+      if (false == pendingCompletedRender || WAIT_OBJECT_0 == ::WaitForSingleObject(consoleInputHandle, 0u)) {
         static unsigned char inputRecord[sizeof(INPUT_RECORD)];
         static std::size_t   inputRecordCapacity = 0u;
         DWORD                inputRecordCount    = 0u;
@@ -665,42 +655,68 @@ int main(int, char* arguments[]) {
             if (KEY_EVENT == inputRecord -> EventType) {
               if (inputRecord -> Event.KeyEvent.bKeyDown)
               switch (inputRecord -> Event.KeyEvent.wVirtualKeyCode) {
-                case VK_DOWN : input('S'); break;
-                case VK_LEFT : input('A'); break;
-                case VK_RIGHT: input('D'); break;
-                case VK_UP   : input('W'); break;
-                default      : input(static_cast<char>(std::toupper(static_cast<unsigned char>(inputRecord -> Event.KeyEvent.uChar.AsciiChar)))); break;
+                case VK_DOWN : Game::input('S'); break;
+                case VK_LEFT : Game::input('A'); break;
+                case VK_RIGHT: Game::input('D'); break;
+                case VK_UP   : Game::input('W'); break;
+                default: switch (inputRecord -> Event.KeyEvent.uChar.AsciiChar) {
+                  case 'a': Game::input('A'); break;
+                  case 'b': Game::input('B'); break;
+                  case 'c': Game::input('C'); break;
+                  case 'd': Game::input('D'); break;
+                  case 'e': Game::input('E'); break;
+                  case 'f': Game::input('F'); break;
+                  case 'g': Game::input('G'); break;
+                  case 'h': Game::input('H'); break;
+                  case 'i': Game::input('I'); break;
+                  case 'j': Game::input('J'); break;
+                  case 'k': Game::input('K'); break;
+                  case 'l': Game::input('L'); break;
+                  case 'm': Game::input('M'); break;
+                  case 'n': Game::input('N'); break;
+                  case 'o': Game::input('O'); break;
+                  case 'p': Game::input('P'); break;
+                  case 'q': Game::input('Q'); break;
+                  case 'r': Game::input('R'); break;
+                  case 's': Game::input('S'); break;
+                  case 't': Game::input('T'); break;
+                  case 'u': Game::input('U'); break;
+                  case 'v': Game::input('V'); break;
+                  case 'w': Game::input('W'); break;
+                  case 'x': Game::input('X'); break;
+                  case 'y': Game::input('Y'); break;
+                  case 'z': Game::input('Z'); break;
+                  default : Game::input(inputRecord -> Event.KeyEvent.uChar.AsciiChar); break;
+                }
               }
             }
           }
         }
 
-        // ...
-        consoleCursorPosition.X = 0;
-        consoleCursorPosition.Y = 0;
+        if (NULL == Game::DISPLAY)
+        continue;
 
-        if (FALSE != ::SetConsoleCursorPosition(consoleOutputHandle, consoleCursorPosition)) {
-          DWORD &charactersWritten = inputRecordCount;
+        pendingColoredRender = false;
+        Game::draw(&Graphics::render);
 
-          // ...
-          if (NULL == Game::DISPLAY) continue;
-          draw(&Graphics::render);
+        if (pendingColoredRender || false == pendingCompletedRender) {
+          consoleCursorPosition.X = 0;
+          consoleCursorPosition.Y = 0;
 
-          if (FALSE != ::WriteConsoleA(consoleOutputHandle, Game::DISPLAY, Game::DISPLAY_CAPACITY, &charactersWritten, static_cast<LPVOID>(NULL))) {
-            pendingRender = false;
-            continue;
+          if (FALSE != ::SetConsoleCursorPosition(consoleOutputHandle, consoleCursorPosition)) {
+            DWORD &charactersWritten = inputRecordCount;
+
+            // ...
+            ::SetConsoleTextAttribute(consoleOutputHandle, pendingAttributes ? FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED : consoleScreenBufferInformation.wAttributes);
+            (FALSE == ::WriteConsoleA(consoleOutputHandle, Game::DISPLAY, Game::DISPLAY_CAPACITY, &charactersWritten, static_cast<LPVOID>(NULL)) ? pendingBufferedRender : pendingCompletedRender) = true;
           }
         }
 
-        if (false == pendingRender) {
-          pendingRender = true;
+        if (pendingBufferedRender) {
+          pendingBufferedRender = false;
           std::fputs("[" TITLE "] Unable to render game graphics", stderr);
         }
       }
-
-      // ...
-      if (false == bufferRendering)
-      bufferRendering = true;
     }
   #else
     std::fputs("[" TITLE "] Unable to render game graphics", stderr);
