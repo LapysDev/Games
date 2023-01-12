@@ -161,10 +161,10 @@
             : arguments.length === 1 ? +arguments[0] : 0x0000000;
 
             // ...
-            Object.defineProperty(this, "blue",    {configurable: false, enumerable: true,  get: function() { return (value & 0x00000FF) >>> 0x00 }, set: function(intensity) { intensity *= intensity > 0; value = (value & 0x1FFFF00) | ((intensity % 0x100) << 0x00) }});
-            Object.defineProperty(this, "green",   {configurable: false, enumerable: true,  get: function() { return (value & 0x000FF00) >>> 0x08 }, set: function(intensity) { intensity *= intensity > 0; value = (value & 0x1FF00FF) | ((intensity % 0x100) << 0x08) }});
-            Object.defineProperty(this, "red",     {configurable: false, enumerable: true,  get: function() { return (value & 0x0FF0000) >>> 0x10 }, set: function(intensity) { intensity *= intensity > 0; value = (value & 0x100FFFF) | ((intensity % 0x100) << 0x10) }});
-            Object.defineProperty(this, "alpha",   {configurable: false, enumerable: true,  get: function() { return (value & 0x1000000) >>> 0x18 }, set: function(intensity) { intensity *= intensity > 0; value = (value & 0x0FFFFFF) | ((intensity % 0x002) << 0x18) }});
+            Object.defineProperty(this, "blue",    {configurable: false, enumerable: true, get: function() { return (value & 0x00000FF) >>> 0x00 }, set: function(intensity) { intensity *= intensity > 0; value = (value & 0x1FFFF00) | ((intensity % 0x100) << 0x00) }});
+            Object.defineProperty(this, "green",   {configurable: false, enumerable: true, get: function() { return (value & 0x000FF00) >>> 0x08 }, set: function(intensity) { intensity *= intensity > 0; value = (value & 0x1FF00FF) | ((intensity % 0x100) << 0x08) }});
+            Object.defineProperty(this, "red",     {configurable: false, enumerable: true, get: function() { return (value & 0x0FF0000) >>> 0x10 }, set: function(intensity) { intensity *= intensity > 0; value = (value & 0x100FFFF) | ((intensity % 0x100) << 0x10) }});
+            Object.defineProperty(this, "alpha",   {configurable: false, enumerable: true, get: function() { return (value & 0x1000000) >>> 0x18 }, set: function(intensity) { intensity *= intensity > 0; value = (value & 0x0FFFFFF) | ((intensity % 0x002) << 0x18) }});
             Object.defineProperty(this, "valueOf", {configurable: false, enumerable: false, value: function valueOf() { return value }, writable: false});
 
             /* ... */
@@ -200,7 +200,7 @@
 
           this.cell = "object" === typeof cell && (null === cell || cell instanceof Cell) ? cell : null;
           this.type = Food.APPLE;
-          this.type = type
+          this.type = type;
 
           /* ... */
           Object.preventExtensions(this)
@@ -258,11 +258,13 @@
 
         // Snake
         function Snake(head) {
-          var headColor      = Snake.prototype.headColor;
-          var snake          = this;
-          var tailCollection = new Collection();
-          var tailColor      = Snake.prototype.tailColor;
+          var snake = this;
 
+          var headColor      = Snake.prototype.headColor;
+          var tailColor      = Snake.prototype.tailColor;
+          var tailCollection = new Collection();
+
+          // ...
           function reform() {
             snake.tail = new Collection(this.board.size)
           }
@@ -290,66 +292,94 @@
           Object.preventExtensions(this)
         }
           Snake.prototype = Object.freeze(Object.create(null, {
-            head     : {configurable: false, enumerable: false, value: null,        writable: false},
-            headColor: {configurable: false, enumerable: false, value: Color.GREY,  writable: false},
-            tail     : {configurable: false, enumerable: false, value: null,        writable: false},
-            tailColor: {configurable: false, enumerable: false, value: Color.BLACK, writable: false}
+            head     : {configurable: false, enumerable: false, value: null,             writable: false},
+            headColor: {configurable: false, enumerable: false, value: Color.GREY,       writable: false},
+            tail     : {configurable: false, enumerable: false, value: new Collection(), writable: false},
+            tailColor: {configurable: false, enumerable: false, value: Color.BLACK,      writable: false}
           }));
 
         // Board
         function Board(context) {
+          var board           = this;
+          var carnivorousFood = [Food.BADGER, Food.CAMEL, Food.CAT, Food.CHIPMUNK, Food.COW, Food.DOG, Food.GIRAFFE, Food.GOAT, Food.HORSE, Food.MONKEY, Food.MOUSE, Food.PIG, Food.RABBIT, Food.RACCOON, Food.RAM, Food.RAT, Food.SHEEP, Food.SLOTH, Food.ZEBRA];
+          var herbivorousFood = [Food.APPLE, Food.BANANA, Food.BLUEBERRIES, Food.CHERRIES, Food.COCONUT, Food.GRAPES, Food.KIWI, Food.MANGO, Food.MELON, Food.LEMON, Food.OLIVE, Food.PEACH, Food.PEAR, Food.PINEAPPLE, Food.ORANGE, Food.STRAWBERRY, Food.TANGERINE, Food.TOMATO, Food.WATERMELON];
+
           var backgroundColor       = Board.prototype.backgroundColor;
-          var board                 = this;
           var boardMargin           = Board.prototype.boardMargin;
           var boardPadding          = Board.prototype.boardPadding;
           var boardRadius           = Board.prototype.boardRadius;
-          var carnivorousFood       = [Food.BADGER, Food.CAMEL, Food.CAT, Food.CHIPMUNK, Food.COW, Food.DOG, Food.GIRAFFE, Food.GOAT, Food.HORSE, Food.MONKEY, Food.MOUSE, Food.PIG, Food.RABBIT, Food.RACCOON, Food.RAM, Food.RAT, Food.SHEEP, Food.SLOTH, Food.ZEBRA];
           var cellMargin            = Board.prototype.cellMargin;
           var cellRadius            = Board.prototype.cellRadius;
           var columnCount           = Board.prototype.columnCount;
-          var food                  = new Collection();
           var foodMaximumCount      = Board.prototype.foodMaximumCount;
           var foodSpawnDelta        = Board.prototype.foodSpawnDelta;
           var foodSpawnMinimumCount = Board.prototype.foodSpawnMinimumCount;
           var foodSpawnTimer        = Board.prototype.foodSpawnTimer;
           var foregroundColor       = Board.prototype.foregroundColor;
-          var herbivorousFood       = [Food.APPLE, Food.BANANA, Food.BLUEBERRIES, Food.CHERRIES, Food.COCONUT, Food.GRAPES, Food.KIWI, Food.MANGO, Food.MELON, Food.LEMON, Food.OLIVE, Food.PEACH, Food.PEAR, Food.PINEAPPLE, Food.ORANGE, Food.STRAWBERRY, Food.TANGERINE, Food.TOMATO, Food.WATERMELON];
           var rowCount              = Board.prototype.rowCount;
-          var snakes                = new Collection();
+          var snakeMaximumCount     = 0;
           var timestamp             = new Date();
           var vegan                 = Board.prototype.vegan;
+
+          var food   = new Collection();
+          var snakes = new Collection(1);
+          var walls  = new Collection();
+
+          // ...
+          function resize() {
+            var recentFood   = food;
+            var recentSnakes = snakes;
+            var recentWalls  = walls;
+
+            // ...
+            food  = new Collection(foodMaximumCount);
+            walls = new Collection(board.size);
+
+            for (var index = recentFood .length; index--; ) { if (columnCount >= recentFood [index].column && rowCount >= recentFood [index].row) food .add(recentFood [index]) }
+            for (var index = recentWalls.length; index--; ) { if (columnCount >= recentWalls[index].column && rowCount >= recentWalls[index].row) walls.add(recentWalls[index]) }
+
+            if (board.size > snakeMaximumCount) {
+              snakes = new Collection(snakeMaximumCount = board.size);
+              for (var index = recentSnakes.length; index; ) snakes.add(recentSnakes[--index])
+            }
+          }
 
           // ...
           if (false === ("object" === typeof context && (context instanceof CanvasRenderingContext2D || context instanceof OffscreenCanvasRenderingContext2D)))
           throw TypeError("`Board` requires a valid `HTMLCanvasElement` \"2d\" context");
 
-          Object.defineProperty(this, "backgroundColor",       {configurable: false, enumerable: false, get: function() { return backgroundColor       }, set: function(color)        { backgroundColor       = new Color(color)                                                                                                                                              }});
-          Object.defineProperty(this, "boardMargin",           {configurable: false, enumerable: false, get: function() { return boardMargin           }, set: function(margin)       { boardMargin           = +margin;           boardMargin          *= boardMargin    > 0                                                                                                 }});
-          Object.defineProperty(this, "boardPadding",          {configurable: false, enumerable: false, get: function() { return boardPadding          }, set: function(padding)      { boardPadding          = +padding;          boardPadding         *= boardPadding   > 0                                                                                                 }});
-          Object.defineProperty(this, "boardRadius",           {configurable: false, enumerable: false, get: function() { return boardRadius           }, set: function(radius)       { boardRadius           = +radius;           boardRadius          *= boardRadius    > 0                                                                                                 }});
-          Object.defineProperty(this, "cellMargin",            {configurable: false, enumerable: false, get: function() { return cellMargin            }, set: function(margin)       { cellMargin            = +margin;           cellMargin           *= cellMargin     > 0                                                                                                 }});
-          Object.defineProperty(this, "cellRadius",            {configurable: false, enumerable: false, get: function() { return cellRadius            }, set: function(radius)       { cellRadius            = +radius;           cellRadius           *= cellRadius     > 0                                                                                                 }});
-          Object.defineProperty(this, "columnCount",           {configurable: false, enumerable: false, get: function() { return columnCount           }, set: function(count)        { columnCount           = +count        | 0; columnCount          *= columnCount    > 0; if (foodMaximumCount > columnCount * rowCount) board.foodMaximumCount = columnCount * rowCount }});
-          Object.defineProperty(this, "context",               {configurable: false, enumerable: false, get: function() { return context               }, set: function(object)       { context               = "object" === typeof object && (object instanceof CanvasRenderingContext2D || object instanceof OffscreenCanvasRenderingContext2D) ? object : context          }});
-          Object.defineProperty(this, "rowCount",              {configurable: false, enumerable: false, get: function() { return rowCount              }, set: function(count)        { rowCount              = +count        | 0; rowCount             *= rowCount       > 0; if (foodMaximumCount > columnCount * rowCount) board.foodMaximumCount = columnCount * rowCount }});
-          Object.defineProperty(this, "foodMaximumCount",      {configurable: false, enumerable: false, get: function() { return foodMaximumCount      }, set: function(count)        { foodMaximumCount      = +count        | 0; food                  = new Collection(foodMaximumCount *= foodMaximumCount > 0)                                                           }});
-          Object.defineProperty(this, "foodSpawnDelta",        {configurable: false, enumerable: false, get: function() { return foodSpawnDelta        }, set: function(delta)        { foodSpawnDelta        = +delta        | 0; foodSpawnDelta       *= foodSpawnDelta > 0                                                                                                 }});
-          Object.defineProperty(this, "foodSpawnMinimumCount", {configurable: false, enumerable: false, get: function() { return foodSpawnMinimumCount }, set: function(count)        { foodSpawnMinimumCount = +count        | 0; foodSpawnMinimumCount = foodSpawnMinimumCount > 1 ? foodSpawnMinimumCount : 1                                                              }});
-          Object.defineProperty(this, "foodSpawnTimer",        {configurable: false, enumerable: false, get: function() { return foodSpawnTimer        }, set: function(milliseconds) { foodSpawnTimer        = +milliseconds | 0; foodSpawnTimer       *= foodSpawnTimer > 0                                                                                                 }});
-          Object.defineProperty(this, "foregroundColor",       {configurable: false, enumerable: false, get: function() { return foregroundColor       }, set: function(color)        { foregroundColor       = new Color(color)                                                                                                                                              }});
-          Object.defineProperty(this, "vegan",                 {configurable: false, enumerable: false, get: function() { return vegan                 }, set: function(option)       { vegan                 = !!option                                                                                                                                                      }});
+          Object.defineProperty(this, "backgroundColor",       {configurable: false, enumerable: false, get: function() { return backgroundColor       }, set: function(color)        { backgroundColor       = new Color(color)                                                                                                                                     }});
+          Object.defineProperty(this, "boardMargin",           {configurable: false, enumerable: false, get: function() { return boardMargin           }, set: function(margin)       { boardMargin           = +margin;           boardMargin          *= boardMargin    > 0                                                                                        }});
+          Object.defineProperty(this, "boardPadding",          {configurable: false, enumerable: false, get: function() { return boardPadding          }, set: function(padding)      { boardPadding          = +padding;          boardPadding         *= boardPadding   > 0                                                                                        }});
+          Object.defineProperty(this, "boardRadius",           {configurable: false, enumerable: false, get: function() { return boardRadius           }, set: function(radius)       { boardRadius           = +radius;           boardRadius          *= boardRadius    > 0                                                                                        }});
+          Object.defineProperty(this, "cellMargin",            {configurable: false, enumerable: false, get: function() { return cellMargin            }, set: function(margin)       { cellMargin            = +margin;           cellMargin           *= cellMargin     > 0                                                                                        }});
+          Object.defineProperty(this, "cellRadius",            {configurable: false, enumerable: false, get: function() { return cellRadius            }, set: function(radius)       { cellRadius            = +radius;           cellRadius           *= cellRadius     > 0                                                                                        }});
+          Object.defineProperty(this, "columnCount",           {configurable: false, enumerable: false, get: function() { return columnCount           }, set: function(count)        { columnCount           = +count        | 0; columnCount          *= columnCount    > 0; if (foodMaximumCount > board.size) board.foodMaximumCount = board.size                }});
+          Object.defineProperty(this, "context",               {configurable: false, enumerable: false, get: function() { return context               }, set: function(object)       { context               = "object" === typeof object && (object instanceof CanvasRenderingContext2D || object instanceof OffscreenCanvasRenderingContext2D) ? object : context }});
+          Object.defineProperty(this, "foodMaximumCount",      {configurable: false, enumerable: false, get: function() { return foodMaximumCount      }, set: function(count)        { foodMaximumCount      = +count        | 0; foodMaximumCount     *= foodMaximumCount > 0; resize()                                                                            }});
+          Object.defineProperty(this, "foodSpawnDelta",        {configurable: false, enumerable: false, get: function() { return foodSpawnDelta        }, set: function(delta)        { foodSpawnDelta        = +delta        | 0; foodSpawnDelta       *= foodSpawnDelta > 0                                                                                        }});
+          Object.defineProperty(this, "foodSpawnMinimumCount", {configurable: false, enumerable: false, get: function() { return foodSpawnMinimumCount }, set: function(count)        { foodSpawnMinimumCount = +count        | 0; foodSpawnMinimumCount = foodSpawnMinimumCount > 1 ? foodSpawnMinimumCount : 1                                                     }});
+          Object.defineProperty(this, "foodSpawnTimer",        {configurable: false, enumerable: false, get: function() { return foodSpawnTimer        }, set: function(milliseconds) { foodSpawnTimer        = +milliseconds | 0; foodSpawnTimer       *= foodSpawnTimer > 0                                                                                        }});
+          Object.defineProperty(this, "foregroundColor",       {configurable: false, enumerable: false, get: function() { return foregroundColor       }, set: function(color)        { foregroundColor       = new Color(color)                                                                                                                                     }});
+          Object.defineProperty(this, "rowCount",              {configurable: false, enumerable: false, get: function() { return rowCount              }, set: function(count)        { rowCount              = +count        | 0; rowCount             *= rowCount       > 0; if (foodMaximumCount > board.size) board.foodMaximumCount = board.size                }});
+          Object.defineProperty(this, "vegan",                 {configurable: false, enumerable: false, get: function() { return vegan                 }, set: function(option)       { vegan                 = !!option                                                                                                                                             }});
 
           Object.defineProperty(this, "boardSize", {configurable: false, enumerable: false, get: function() { var boardSize = context.canvas.height < context.canvas.width ? context.canvas.height : context.canvas.width; return boardSize > (boardMargin * 2.0) ? boardSize - (boardMargin * 2.0) : 0.0 }});
           Object.defineProperty(this, "cellSize",  {configurable: false, enumerable: false, get: function() { return (board.boardSize - (boardPadding * 2.0) - (boardRadius * 2.0)) / (columnCount > rowCount ? columnCount : rowCount)                                                                   }});
           Object.defineProperty(this, "food",      {configurable: false, enumerable: false, get: function() { return food                                                                                                                                                                                 }});
           Object.defineProperty(this, "snakes",    {configurable: false, enumerable: false, get: function() { return snakes                                                                                                                                                                               }});
+          Object.defineProperty(this, "walls",     {configurable: false, enumerable: false, get: function() { return walls                                                                                                                                                                                }});
 
           this.context = context;
 
           /* ... */
           Object.preventExtensions(this);
 
+          this.snakes.add(new Snake(new Cell(this, Math.trunc(columnCount / 2), Math.trunc(rowCount / 2))));
+
           requestAnimationFrame(function render() {
+            var wallCount     = 0;
+            var snakeCount    = 0;
             var foodSpawn     = food.length < foodSpawnMinimumCount;
             var cellSize      = board.cellSize;
             var cellSubMargin = cellMargin < cellSize ? cellMargin : cellSize;
@@ -398,34 +428,55 @@
             context.closePath();
 
             // ... [Food]
+            for (var index = board.snakes.length; index--; )
+            snakeCount += board.snakes[index].tail.length + (null !== board.snakes[index].head);
+
             if (foodSpawnTimer < new Date() - timestamp) {
               foodSpawn = true;
               timestamp = new Date()
             }
 
-            if (foodSpawn && food.length < foodMaximumCount) {
+            if (foodSpawn && food.length < Math.min(foodMaximumCount, board.size - (snakeCount + wallCount))) {
               if (food.length > foodSpawnMinimumCount + foodSpawnDelta)
               food.length = foodSpawnMinimumCount + foodSpawnDelta;
 
               while (food.length < foodSpawnMinimumCount + Math.trunc(Math.random() * foodSpawnDelta)) {
-                var column = 0;
-                var row    = 0;
+                var column      = 0;
+                var unavailable = false;
+                var row         = 0;
 
                 // ...
-                generate_food_coordinates:
-                while (true) {
+                generate_coordinates:
+                for (var recentColumn = column, recentRow = row; ; ) {
                   column = Math.trunc(columnCount * Math.random());
                   row    = Math.trunc(rowCount    * Math.random());
 
+                  if (column === recentColumn && row === recentRow) {
+                    unavailable = true; // ->> ¯\_(ツ)_/¯
+                    break
+                  }
+
                   for (var index = food.length; index--; ) {
                     if (column === food[index].column && row === food[index].row)
-                    if (index) continue generate_food_coordinates
+                    continue generate_coordinates
+                  }
+
+                  for (var index = snakes.length; index--; ) {
+                    if (null !== snakes[index].head) {
+                      if (column === snakes[index].head.column && row === snakes[index].head.row)
+                      continue generate_coordinates
+                    }
+
+                    for (var subindex = snakes[index].tail.length; subindex--; ) {
+                      if (column === snakes[index].tail[subindex].column && row === snakes[index].tail[subindex].row)
+                      continue generate_coordinates
+                    }
                   }
 
                   break
                 }
 
-                if (false === food.add(new Food(new Cell(board, column, row), (vegan ? herbivorousFood : carnivorousFood)[Math.trunc(Math.random() * (vegan ? herbivorousFood : carnivorousFood).length)])))
+                if (false === unavailable && false === food.add(new Food(new Cell(board, column, row), (vegan ? herbivorousFood : carnivorousFood)[Math.trunc(Math.random() * (vegan ? herbivorousFood : carnivorousFood).length)])))
                 break
               }
             }
@@ -451,6 +502,18 @@
               for (var index = food.length; index--; ) {
                 if (column === food[index].column && row === food[index].row)
                 context.fillStyle = new Color(foregroundColor).lighten(0x99, 0x33, 0x00).darken(0x33, 0x33, 0x66)
+              }
+
+              for (var index = snakes.length; index--; ) {
+                for (var subindex = snakes[index].tail.length; subindex--; ) {
+                  if (column === snakes[index].tail[subindex].column && row === snakes[index].tail[subindex].row)
+                  context.fillStyle = snakes[index].tailColor
+                }
+
+                if (null !== snakes[index].head) {
+                  if (column === snakes[index].head.column && row === snakes[index].head.row)
+                  context.fillStyle = snakes[index].headColor
+                }
               }
 
               context.beginPath();
@@ -499,6 +562,7 @@
             rowCount             : {configurable: false, enumerable: false, value: 1,                writable: false},
             snakes               : {configurable: false, enumerable: false, value: new Collection(), writable: false},
             vegan                : {configurable: false, enumerable: false, value: true,             writable: false},
+            walls                : {configurable: false, enumerable: false, value: new Collection(), writable: false},
 
             size: {configurable: false, enumerable: false, get: function() { return this.columnCount * this.rowCount }}
           }));
@@ -507,14 +571,18 @@
         var BOARD = new Board((canvas instanceof HTMLCanvasElement ? canvas : document.createElement("canvas")).getContext("2d", {alpha: true, desynchronized: true}));
 
         /* Modification > ... */
-        BOARD.backgroundColor  = new Color(0x66, 0x66, 0x66);
-        BOARD.cellRadius       = 5.0;
-        BOARD.columnCount      = 15;
-        BOARD.foodMaximumCount = 3;
-        BOARD.foodSpawnDelta   = 2;
-        BOARD.foregroundColor  = new Color(0x99, 0x99, 0x99);
-        BOARD.rowCount         = 10;
-        BOARD.vegan            = true;
+        BOARD.backgroundColor       = new Color(0x66, 0x66, 0x66);
+        BOARD.cellRadius            = 5.0;
+        BOARD.columnCount           = 15;
+        BOARD.foodMaximumCount      = 3;
+        BOARD.foodSpawnDelta        = 2;
+        BOARD.foregroundColor       = new Color(0x99, 0x99, 0x99);
+        BOARD.rowCount              = 10;
+        BOARD.snakes[0].head.column = Math.trunc(BOARD.columnCount / 2);
+        BOARD.snakes[0].head.row    = Math.trunc(BOARD.rowCount    / 2);
+        BOARD.snakes[0].headColor   = new Color(0x00, 0x96, 0xFF);
+        BOARD.snakes[0].tailColor   = new Color(0x00, 0x69, 0xFF);
+        BOARD.vegan                 = true;
 
         /* ... */
         setTimeout(function render() {
