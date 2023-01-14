@@ -86,8 +86,16 @@
             if (false === ("object" === typeof board && board instanceof Board))
             throw new TypeError("`Cell`s must be part of a (single) `Board`");
 
-            this.column = arguments.length > 1 ? arguments[1] instanceof Cell ? arguments[1].column : column : 0;
-            this.row    = arguments.length > 1 ? arguments[1] instanceof Cell ? arguments[1].row    : row    : 0;
+            // ...
+            if (arguments.length <= 1)
+              this.column = this.row = 0;
+
+            else {
+              if (false === arguments[1] instanceof Cell) { this.column = column; this.row = row }
+              else { var cell = arguments[1]; this.column = cell.column; this.row = cell.row }
+            }
+            // this.column = arguments.length > 1 ? arguments[1] instanceof Cell ? (console.log(arguments.length), arguments[1].column) : column : 0;
+            // this.row    = arguments.length > 1 ? arguments[1] instanceof Cell ? (console.log(arguments.length), arguments[1].row)    : row    : 0;
 
             /* ... */
             Object.preventExtensions(this)
@@ -115,10 +123,10 @@
 
             // Wall
             function Wall(board, column, row) {
-              if (false === ("object" === typeof snake && snake instanceof Board))
+              if (false === ("object" === typeof board && board instanceof Board))
               throw new TypeError("`Wall`s must be part of a single `Board`");
 
-              return arguments.length > 1 ? arguments[1] instanceof Cell ? new Cell(board, arguments[1]) : new Cell(board, column, row) : new Cell(board)
+              return new Cell(board, column, row)
             }
               Wall.prototype = Cell.prototype;
 
@@ -285,13 +293,15 @@
 
         // Snake
         function Snake(head) {
+          var direction      = Snake.prototype.direction;
           var head           = head;
-          var headColor      = Snake.prototype.headColor;
-          var tailColor      = Snake.prototype.tailColor;
+          var headColor      = new Color(Snake.prototype.headColor);
+          var tailColor      = new Color(Snake.prototype.tailColor);
           var tailCollection = new Collection();
 
           // ...
           Object.defineProperty(this, "board",     {configurable: false, enumerable: false, get: function() { return head.board     }, set: function(board)      { head.board = board                                                                                                                                                                                                              }});
+          Object.defineProperty(this, "direction", {configurable: false, enumerable: false, get: function() { return direction      }, set: function(option)     { switch (option) { case 0x0: case Snake.DOWN: case Snake.LEFT: case Snake.RIGHT: case Snake.UP: direction = option }                                                                                                             }});
           Object.defineProperty(this, "head",      {configurable: false, enumerable: false, get: function() { return head           }, set: function(cell)       { if ("object" !== typeof cell) return; if (null === cell) { head = null; tailCollection = new Collection() } else if (cell instanceof Cell) { cell.owner = this; head = cell; tailCollection = new Collection(cell.board.size) } }});
           Object.defineProperty(this, "headColor", {configurable: false, enumerable: false, get: function() { return headColor      }, set: function(color)      { headColor      = new Color(color)                                                                                                                                                                                               }});
           Object.defineProperty(this, "tail",      {configurable: false, enumerable: false, get: function() { return tailCollection }, set: function(collection) { tailCollection = "object" === typeof collection && collection instanceof Collection ? collection : tailCollection                                                                                                               }});
@@ -306,11 +316,19 @@
           Snake.prototype = Object.freeze(Object.create(null, {
             board      : {configurable: false, enumerable: false, value: null,             writable: false},
             constructor: {configurable: false, enumerable: false, value: Snake,            writable: false},
+            direction  : {configurable: false, enumerable: false, value: 0x0,              writable: false},
             head       : {configurable: false, enumerable: false, value: null,             writable: false},
             headColor  : {configurable: false, enumerable: false, value: Color.GREY,       writable: false},
             tail       : {configurable: false, enumerable: false, value: new Collection(), writable: false},
             tailColor  : {configurable: false, enumerable: false, value: Color.BLACK,      writable: false}
           }));
+
+          Object.defineProperty(Snake, "DOWN",  {configurable: false, enumerable: false, value: 0x1, writable: false});
+          Object.defineProperty(Snake, "LEFT",  {configurable: false, enumerable: false, value: 0x2, writable: false});
+          Object.defineProperty(Snake, "RIGHT", {configurable: false, enumerable: false, value: 0x3, writable: false});
+          Object.defineProperty(Snake, "UP",    {configurable: false, enumerable: false, value: 0x4, writable: false});
+
+          Object.preventExtensions(Snake);
 
         // Board
         function Board(context) {
@@ -322,7 +340,7 @@
           var aliasSVGElement       = document.createElementNS("http://www.w3.org/2000/svg", "svg");
           var aliasSVGFilterID      = "alias";
           var aliasSVGURL           = null;
-          var backgroundColor       = Board.prototype.backgroundColor;
+          var backgroundColor       = new Color(Board.prototype.backgroundColor);
           var boardCanvas           = null;
           var boardContext          = context;
           var boardMargin           = Board.prototype.boardMargin;
@@ -339,7 +357,7 @@
           var foodSpawnMinimumCount = Board.prototype.foodSpawnMinimumCount;
           var foodSpawnTimer        = Board.prototype.foodSpawnTimer;
           var foodSpawnTimestamp    = new Date();
-          var foregroundColor       = Board.prototype.foregroundColor;
+          var foregroundColor       = new Color(Board.prototype.foregroundColor);
           var rowCount              = Board.prototype.rowCount;
           var snakeMaximumCount     = 0;
           var snakes                = new Collection(1);
@@ -361,7 +379,7 @@
 
             // ...
             for (var node = boardCanvas; node.type === 0x1 /* --> Node.ELEMENT_NODE */; node = node.parentNode)
-            zoom += (getComputedStyle(node) /* ->> preferably cached */).getPropertyValue("zoom");
+            zoom *= (getComputedStyle(node) /* ->> preferably cached */).getPropertyValue("zoom");
 
             return zoom
           }
@@ -386,9 +404,23 @@
             walls  = new Collection(BOARD.size);
             snakes = size > snakeMaximumCount ? new Collection(snakeMaximumCount = size) : snakes;
 
-            for (var index = recentFood  .length; index--; ) { if (columnCount > recentFood  [index].column && rowCount > recentFood  [index].row) void food .add(recentFood [index]) }
-            for (var index = recentWalls .length; index--; ) { if (columnCount > recentWalls [index].column && rowCount > recentWalls [index].row) void walls.add(recentWalls[index]) }
-            for (var index = recentSnakes.length; index--; ) { if (recentSnakes === snakes) break; void snakes.add(recentSnakes[index]) }
+            for (var index = recentFood  .length; index--; ) { if (columnCount > recentFood[index].column && rowCount > recentFood[index].row)         food  .add(recentFood  [index]) }
+            for (var index = recentWalls .length; index--; ) { /* if (columnCount > recentWalls[index].column && rowCount > recentWalls[index].row) */ walls .add(recentWalls [index]) }
+            for (var index = recentSnakes.length; index--; ) { if (recentSnakes === snakes) break;                                                     snakes.add(recentSnakes[index]) }
+
+            for (var index = snakes.length; index; ) {
+              var snake = snakes[--index];
+
+              if (columnCount <= snake.head.column || rowCount <= snake.head.row) {
+                snakes.remove(snake);
+                snake.tail.length = 0;
+
+                walls.add(new Wall(BOARD, snake.head))
+              }
+            }
+
+            if (0 === snakes.length)
+            BOARD.spawn() // UPDATE (Lapys)
           }
 
           // ...
@@ -405,7 +437,7 @@
           Object.defineProperty(this, "foodSpawnMinimumCount", {configurable: false, enumerable: false, get: function() { return foodSpawnMinimumCount }, set: function(count)        { foodSpawnMinimumCount = +count        | 0; foodSpawnMinimumCount = foodSpawnMinimumCount > 1 ? foodSpawnMinimumCount : 1                             }});
           Object.defineProperty(this, "foodSpawnTimer",        {configurable: false, enumerable: false, get: function() { return foodSpawnTimer        }, set: function(milliseconds) { foodSpawnTimer        = +milliseconds | 0; foodSpawnTimer       *= foodSpawnTimer > 0                                                                }});
           Object.defineProperty(this, "rowCount",              {configurable: false, enumerable: false, get: function() { return rowCount              }, set: function(count)        { rowCount              = +count        | 0; rowCount             *= rowCount       > 0; this.foodMaximumCount = Math.min(foodMaximumCount, this.size) }});
-          Object.defineProperty(this, "vegan",                 {configurable: false, enumerable: false, get: function() { return vegan                 }, set: function(option)       { vegan                 = !!option                                                                                                                     }});
+          Object.defineProperty(this, "vegan",                 {configurable: false, enumerable: false, get: function() { return vegan                 }, set: function(boolean)      { vegan                 = !!boolean                                                                                                                    }});
 
           Object.defineProperty(this, "context",          {configurable: false, enumerable: false, get: function() { return boardContext     }, set: function(object) { if ("object" === typeof object && (object instanceof CanvasRenderingContext2D || object instanceof OffscreenCanvasRenderingContext2D)) { boardCanvas = object.canvas; boardContext = object } }});
           Object.defineProperty(this, "foodMaximumCount", {configurable: false, enumerable: false, get: function() { return foodMaximumCount }, set: function(count)  { var recentFoodMaximumCount = foodMaximumCount; foodMaximumCount = +count | 0; foodMaximumCount *= foodMaximumCount > 0; if (foodMaximumCount !== recentFoodMaximumCount) resize()             }});
@@ -465,6 +497,7 @@
             boardCanvas.width             = boardCanvasBoundingClientRect.width  * zoom;
             canvas.height                 = alias(boardCanvas.height);
             canvas.width                  = alias(boardCanvas.width);
+            context.font                  = (getComputedStyle(boardCanvas) /* ->> preferably cached */).getPropertyValue("font-size") + " monospace";
             context.imageSmoothingEnabled = false;
             context.imageSmoothingQuality = "low";
 
@@ -567,7 +600,9 @@
               generate_wall_color:
               for (var index = walls.length; index--; )
               if (column === walls[index].column && row === walls[index].row) {
-                context.fillStyle = new Color(backgroundColor).darken(0x06, 0x06, 0x06);
+                context.fillStyle = new Color(backgroundColor).darken(0x1F, 0x1F, 0x1F);
+                context.fillRect(alias(left) - ((cellMargin < cellSize ? cellMargin : cellSize) / 2.0), alias(top) - ((cellMargin < cellSize ? cellMargin : cellSize) / 2.0), alias(cellSize), alias(cellSize));
+
                 break generate_wall_color
               }
 
@@ -613,8 +648,10 @@
               var snakeHead = snake.head;
               var snakeTail = snake.tail;
 
-              var left = cellLeft - ((cellMargin < cellSize ? cellMargin : cellSize) / 2.0) + (snakeHead.column * cellSize);
-              var top  = cellTop  - ((cellMargin < cellSize ? cellMargin : cellSize) / 2.0) + (snakeHead.row    * cellSize);
+              var snakeLeft = cellLeft - ((cellMargin < cellSize ? cellMargin : cellSize) / 2.0);
+              var snakeTop  = cellTop  - ((cellMargin < cellSize ? cellMargin : cellSize) / 2.0);
+              var left      = snakeLeft + (snakeHead.column * cellSize);
+              var top       = snakeTop  + (snakeHead.row    * cellSize);
 
               // ... [Snake Head]
               context.fillStyle = snake.headColor;
@@ -624,8 +661,12 @@
                 context.fill();
               context.closePath();
 
-              // ... [Snake Tail]
+              // // ... [Snake Tail]
+              // for (var subindex = snakeTail.length; subindex--; )
+              // snakeTail[subindex]
             }
+
+            // ... [Context Menu]
 
             // ...
             boardContext.filter = "url(\"" + aliasSVGURL + '#' + aliasSVGFilterID + "\")";
