@@ -66,7 +66,7 @@
 
     <input autocomplete=off max=65 min=1 onchange="BOARD.columnCount = this.value; BOARD.foodMaximumCount = BOARD.size" oninput="BOARD.columnCount = this.value; BOARD.foodMaximumCount = BOARD.size" style="bottom: 3%; font-family: monospace; left : 10%; position: absolute; text-align: center; width: 33.333333%" tabindex=2 type=number step=1 value="15"/>
     <input autocomplete=off max=65 min=1 onchange="BOARD.rowCount    = this.value; BOARD.foodMaximumCount = BOARD.size" oninput="BOARD.rowCount    = this.value; BOARD.foodMaximumCount = BOARD.size" style="bottom: 3%; font-family: monospace; right: 10%; position: absolute; text-align: center; width: 33.333333%" tabindex=2 type=number step=1 value="10"/>
-    <input autocomplete=off onblur="this.style.opacity = 0.3" onclick="" onfocus="this.style.opacity = 1.0" onmouseleave="this.style.opacity = 0.3" onmouseover="this.style.opacity = 1.0" style="border-radius: 50px; bottom: 8%; cursor: pointer; font: 125% monospace; height: 50px; left: 0; margin: auto; opacity: 0.3; padding: 0; position: absolute; right: 0; transition: 100ms ease-in; width: 60%" tabindex=1 type=button value="spawn snek 🐍"/>
+    <input autocomplete=off onblur="this.style.opacity = 0.3" onclick=BOARD.spawn() onfocus="this.style.opacity = 1.0" onmouseleave="this.style.opacity = 0.3" onmouseover="this.style.opacity = 1.0" style="border-radius: 50px; bottom: 8%; cursor: pointer; font: 125% monospace; height: 50px; left: 0; margin: auto; opacity: 0.3; padding: 0; position: absolute; right: 0; transition: 100ms ease-in; width: 60%" tabindex=1 type=button value="spawn snek 🐍"/>
 
     <!-- Document Script -->
     <script language=javascript type=text/javascript>
@@ -175,14 +175,14 @@
               ((+blue  % 0x100) << 0x00) |
               ((+green % 0x100) << 0x08) |
               ((+red   % 0x100) << 0x10) |
-              (arguments.length > 3 ? (+alpha % 0x002) << 0x18 : 0x1000000)
-            : arguments.length === 1 ? +arguments[0] : 0x0000000;
+              (arguments.length > 3 ? ((alpha * 0xFF) % 0x100) << 0x18 : 0xFF000000)
+            : arguments.length === 1 ? +arguments[0] : 0x00000000;
 
             // ...
-            Object.defineProperty(this, "blue",    {configurable: false, enumerable: true, get: function() { return (value & 0x00000FF) >>> 0x00 }, set: function(intensity) { intensity *= intensity > 0; value = (value & 0x1FFFF00) | ((intensity % 0x100) << 0x00) }});
-            Object.defineProperty(this, "green",   {configurable: false, enumerable: true, get: function() { return (value & 0x000FF00) >>> 0x08 }, set: function(intensity) { intensity *= intensity > 0; value = (value & 0x1FF00FF) | ((intensity % 0x100) << 0x08) }});
-            Object.defineProperty(this, "red",     {configurable: false, enumerable: true, get: function() { return (value & 0x0FF0000) >>> 0x10 }, set: function(intensity) { intensity *= intensity > 0; value = (value & 0x100FFFF) | ((intensity % 0x100) << 0x10) }});
-            Object.defineProperty(this, "alpha",   {configurable: false, enumerable: true, get: function() { return (value & 0x1000000) >>> 0x18 }, set: function(intensity) { intensity *= intensity > 0; value = (value & 0x0FFFFFF) | ((intensity % 0x002) << 0x18) }});
+            Object.defineProperty(this, "blue",    {configurable: false, enumerable: true, get: function() { return (value & 0x000000FF) >>> 0x00          }, set: function(intensity) { intensity *= intensity > 0; value = (value & 0xFFFFFF00) | ((intensity          % 0x100) << 0x00) }});
+            Object.defineProperty(this, "green",   {configurable: false, enumerable: true, get: function() { return (value & 0x0000FF00) >>> 0x08          }, set: function(intensity) { intensity *= intensity > 0; value = (value & 0xFFFF00FF) | ((intensity          % 0x100) << 0x08) }});
+            Object.defineProperty(this, "red",     {configurable: false, enumerable: true, get: function() { return (value & 0x00FF0000) >>> 0x10          }, set: function(intensity) { intensity *= intensity > 0; value = (value & 0xFF00FFFF) | ((intensity          % 0x100) << 0x10) }});
+            Object.defineProperty(this, "alpha",   {configurable: false, enumerable: true, get: function() { return ((value & 0xFF000000) >>> 0x18) / 0xFF }, set: function(intensity) { intensity *= intensity > 0; value = (value & 0x00FFFFFF) | (((intensity * 0xFF) % 0x100) << 0x18) }});
             Object.defineProperty(this, "valueOf", {configurable: false, enumerable: false, value: function valueOf() { return value }, writable: false});
 
             /* ... */
@@ -196,6 +196,7 @@
               constructor: {configurable: false, enumerable: true, value: Color, writable: false},
 
               darken  : {configurable: false, enumerable: false, value: function darken  (red, green, blue) { var color = arguments.length === 1 ? new Color(arguments[0]) : new Color(red, green, blue, 0x1); this.blue -= color.blue;                             this.green -= color.green;                              this.red -= color.red;                            return this }, writable: false},
+              invert  : {configurable: false, enumerable: false, value: function invert  ()                 {                                                                                                  this.blue  = 0xFF - this.blue;                       this.green  = 0xFF - this.green;                        this.red  = 0xFF - this.red;                      return this }, writable: false},
               lighten : {configurable: false, enumerable: false, value: function lighten (red, green, blue) { var color = arguments.length === 1 ? new Color(arguments[0]) : new Color(red, green, blue, 0x1); this.blue  = Math.min(0xFF, color.blue + this.blue); this.green  = Math.min(0xFF, color.green + this.green); this.red  = Math.min(0xFF, color.red + this.red); return this }, writable: false},
               toString: {configurable: false, enumerable: false, value: function toString()                 { return "rgba(" + this.red + ", " + this.green + ", " + this.blue + ", " + this.alpha + ')'                                                                                                                                                                                  }, writable: false},
               valueOf : {configurable: false, enumerable: false, value: function valueOf ()                 { return (this.alpha << 0x18) | (this.blue << 0x00) | (this.green << 0x08) | (this.red << 0x10)                                                                                                                                                                               }, writable: false}
@@ -317,29 +318,34 @@
           var MEATS  = [Food.BADGER, Food.CAMEL, Food.CAT, Food.CHIPMUNK, Food.COW, Food.DOG, Food.GIRAFFE, Food.GOAT, Food.HORSE, Food.MONKEY, Food.MOUSE, Food.PIG, Food.RABBIT, Food.RACCOON, Food.RAM, Food.RAT, Food.SHEEP, Food.SLOTH, Food.ZEBRA];
           var PLANTS = [Food.APPLE, Food.BANANA, Food.BLUEBERRIES, Food.CHERRIES, Food.COCONUT, Food.GRAPES, Food.KIWI, Food.MANGO, Food.MELON, Food.LEMON, Food.OLIVE, Food.PEACH, Food.PEAR, Food.PINEAPPLE, Food.ORANGE, Food.STRAWBERRY, Food.TANGERINE, Food.TOMATO, Food.WATERMELON];
 
+          var alias                 = coordinate => coordinate | 0; // ->> reduce non-intentioned anti-aliasing
+          var aliasSVGElement       = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          var aliasSVGFilterID      = "alias";
+          var aliasSVGURL           = null;
           var backgroundColor       = Board.prototype.backgroundColor;
+          var boardCanvas           = null;
+          var boardContext          = context;
           var boardMargin           = Board.prototype.boardMargin;
           var boardPadding          = Board.prototype.boardPadding;
           var boardRadius           = Board.prototype.boardRadius;
+          var canvas                = document.createElement("canvas");
           var cellMargin            = Board.prototype.cellMargin;
           var cellRadius            = Board.prototype.cellRadius;
           var columnCount           = Board.prototype.columnCount;
+          var context               = canvas.getContext("2d", {alpha: true, desynchronized: true});
+          var food                  = new Collection(0);
           var foodMaximumCount      = Board.prototype.foodMaximumCount;
           var foodSpawnDelta        = Board.prototype.foodSpawnDelta;
           var foodSpawnMinimumCount = Board.prototype.foodSpawnMinimumCount;
           var foodSpawnTimer        = Board.prototype.foodSpawnTimer;
+          var foodSpawnTimestamp    = new Date();
           var foregroundColor       = Board.prototype.foregroundColor;
           var rowCount              = Board.prototype.rowCount;
+          var snakeMaximumCount     = 0;
+          var snakes                = new Collection(1);
           var vegan                 = Board.prototype.vegan;
-
-          var food   = new Collection(0);
-          var snakes = new Collection(1);
-          var walls  = new Collection(0);
-
-          var canvas            = null;
-          var context           = context;
-          var snakeMaximumCount = 0;
-          var timestamp         = new Date();
+          var walls                 = new Collection(0);
+          var zoom                  = 1.0;
 
           // ...
           function getBoardClientSize() {
@@ -348,6 +354,21 @@
 
           function getCellClientSize(size) {
             return (size - (boardPadding * 2.0) - (boardRadius * 2.0)) / (columnCount > rowCount ? columnCount : rowCount)
+          }
+
+          function getClientZoom() {
+            var zoom = devicePixelRatio;
+
+            // ...
+            for (var node = boardCanvas; node.type === 0x1 /* --> Node.ELEMENT_NODE */; node = node.parentNode)
+            zoom += (getComputedStyle(node) /* ->> preferably cached */).getPropertyValue("zoom");
+
+            return zoom
+          }
+
+          function realias() {
+            if (null !== aliasSVGURL) URL.revokeObjectURL(aliasSVGURL);
+            aliasSVGURL = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(aliasSVGElement)], {type: "image/svg+xml"}))
           }
 
           function resize() {
@@ -359,6 +380,8 @@
             var wallCount    = walls.length;
 
             // ...
+            realias();
+
             food   = new Collection(Math.min(foodMaximumCount, size - (snakeCount + wallCount)));
             walls  = new Collection(BOARD.size);
             snakes = size > snakeMaximumCount ? new Collection(snakeMaximumCount = size) : snakes;
@@ -384,8 +407,8 @@
           Object.defineProperty(this, "rowCount",              {configurable: false, enumerable: false, get: function() { return rowCount              }, set: function(count)        { rowCount              = +count        | 0; rowCount             *= rowCount       > 0; this.foodMaximumCount = Math.min(foodMaximumCount, this.size) }});
           Object.defineProperty(this, "vegan",                 {configurable: false, enumerable: false, get: function() { return vegan                 }, set: function(option)       { vegan                 = !!option                                                                                                                     }});
 
-          Object.defineProperty(this, "context",          {configurable: false, enumerable: false, get: function() { return context          }, set: function(object) { if ("object" === typeof object && (object instanceof CanvasRenderingContext2D || object instanceof OffscreenCanvasRenderingContext2D)) { canvas = object.canvas; context = object } }});
-          Object.defineProperty(this, "foodMaximumCount", {configurable: false, enumerable: false, get: function() { return foodMaximumCount }, set: function(count)  { var recentFoodMaximumCount = foodMaximumCount; foodMaximumCount = +count | 0; foodMaximumCount *= foodMaximumCount > 0; if (foodMaximumCount !== recentFoodMaximumCount) resize()   }});
+          Object.defineProperty(this, "context",          {configurable: false, enumerable: false, get: function() { return boardContext     }, set: function(object) { if ("object" === typeof object && (object instanceof CanvasRenderingContext2D || object instanceof OffscreenCanvasRenderingContext2D)) { boardCanvas = object.canvas; boardContext = object } }});
+          Object.defineProperty(this, "foodMaximumCount", {configurable: false, enumerable: false, get: function() { return foodMaximumCount }, set: function(count)  { var recentFoodMaximumCount = foodMaximumCount; foodMaximumCount = +count | 0; foodMaximumCount *= foodMaximumCount > 0; if (foodMaximumCount !== recentFoodMaximumCount) resize()             }});
 
           Object.defineProperty(this, "boardSize", {configurable: false, enumerable: false, get: function() { return getBoardClientSize()                    }});
           Object.defineProperty(this, "cellSize",  {configurable: false, enumerable: false, get: function() { return getCellClientSize(getBoardClientSize()) }});
@@ -396,33 +419,57 @@
           if (false === ("object" === typeof context && (context instanceof CanvasRenderingContext2D || context instanceof OffscreenCanvasRenderingContext2D)))
           throw TypeError("`Board` requires a valid `HTMLCanvasElement` \"2d\" context");
 
-          canvas = context.canvas;
-          this.snakes.add(new Snake(new SnakeHead(this, Math.trunc(columnCount / 2), Math.trunc(rowCount / 2))));
+          boardCanvas = boardContext.canvas;
+
+          this.spawn();
+          aliasSVGElement
+            .appendChild(document.createElementNS("http://www.w3.org/2000/svg", "defs"))
+            .appendChild((filter => {
+              filter.id = aliasSVGFilterID;
+              filter.setAttributeNS(null, "height", "100%");
+              filter.setAttributeNS(null, "width", "100%");
+              filter.setAttributeNS(null, 'x', 0);
+              filter.setAttributeNS(null, 'y', 0);
+
+              return filter
+            })(document.createElementNS("http://www.w3.org/2000/svg", "filter")))
+            .appendChild(document.createElementNS("http://www.w3.org/2000/svg", "feComponentTransfer"))
+            .appendChild((filterElementFunctionAlpha => {
+              filterElementFunctionAlpha.setAttributeNS(null, "tableValues", "0 1");
+              filterElementFunctionAlpha.setAttributeNS(null, "type", "discrete");
+
+              return filterElementFunctionAlpha
+            })(document.createElementNS("http://www.w3.org/2000/svg", "feFuncA")));
 
           // ...
           requestAnimationFrame(function render() {
-            var alias                    = coordinate => coordinate | 0; // ->> reduce non-intentioned anti-aliasing
-            var boardSize                = getBoardClientSize();
-            var canvasBoundingClientRect = canvas.getBoundingClientRect();
-
-            var boardLeft                    = (canvasBoundingClientRect.width  - boardSize) / 2.0;
-            var boardTop                     = (canvasBoundingClientRect.height - boardSize) / 2.0;
-            var cellSize                     = getCellClientSize(boardSize);
-            var cellSubMargin                = cellMargin < cellSize ? cellMargin : cellSize;
-            var contextImageSmoothingEnabled = context.imageSmoothingEnabled;
-            var contextImageSmoothingQuality = context.imageSmoothingQuality;
-            var foodCount                    = food.length;
-            var foodSpawnIncoming            = foodCount < foodSpawnMinimumCount;
-            var size                         = BOARD.size;
-            var snakeCount                   = (() => { var count = snakes.length; for (var index = count; index; ) count += snakes[--index].tail.length; return count })();
-            var wallCount                    = walls.length;
+            var zoom                          = getClientZoom();
+            var boardCanvasBoundingClientRect = boardCanvas.getBoundingClientRect();
+            var boardContextFilter            = boardContext.filter;
+            var boardSize                     = getBoardClientSize();
+            var boardTop                      = ((boardCanvasBoundingClientRect.height * zoom) - boardSize) / 2.0;
+            var boardLeft                     = ((boardCanvasBoundingClientRect.width  * zoom) - boardSize) / 2.0;
+            var cellSize                      = getCellClientSize(boardSize);
+            var cellLeft                      = boardLeft + boardRadius + boardPadding + ((cellMargin < cellSize ? cellMargin : cellSize) / 2.0) + (((boardSize - (boardPadding * 2.0) - (boardRadius * 2.0)) - (columnCount * cellSize)) / 2.0);
+            var cellTop                       = boardTop  + boardRadius + boardPadding + ((cellMargin < cellSize ? cellMargin : cellSize) / 2.0) + (((boardSize - (boardPadding * 2.0) - (boardRadius * 2.0)) - (rowCount    * cellSize)) / 2.0);
+            var foodCount                     = food.length;
+            var foodSpawnIncoming             = foodCount < foodSpawnMinimumCount;
+            var size                          = BOARD.size;
+            var snakeCount                    = (() => { var count = snakes.length; for (var index = count; index; ) count += snakes[--index].tail.length; return count })();
+            var wallCount                     = walls.length;
 
             // Modification > ...
-            canvas.height                 = canvasBoundingClientRect.height;
-            canvas.width                  = canvasBoundingClientRect.width;
+            if (null === aliasSVGURL) realias();
+
+            boardCanvas.height            = boardCanvasBoundingClientRect.height * zoom;
+            boardCanvas.width             = boardCanvasBoundingClientRect.width  * zoom;
+            canvas.height                 = alias(boardCanvas.height);
+            canvas.width                  = alias(boardCanvas.width);
             context.imageSmoothingEnabled = false;
             context.imageSmoothingQuality = "low";
 
+            aliasSVGElement.setAttributeNS(null, "height", "0px");
+            aliasSVGElement.setAttributeNS(null, "width", "0px");
             context.clearRect(0, 0, canvas.width, canvas.height);
 
             // ... [Board]
@@ -450,8 +497,8 @@
             context.fillRect(alias(boardLeft + (boardRadius * 1.0)), alias(boardTop + (boardRadius * 1.0)), alias(boardSize - (boardRadius * 2.0)), alias(boardSize - (boardRadius * 2.0)));
 
             // ... [Food]
-            foodSpawnIncoming = foodSpawnIncoming || foodSpawnTimer < new Date() - timestamp;
-            timestamp         = foodSpawnIncoming ? new Date() : timestamp;
+            foodSpawnIncoming  = foodSpawnIncoming || foodSpawnTimer < new Date() - foodSpawnTimestamp;
+            foodSpawnTimestamp = foodSpawnIncoming ? new Date() : foodSpawnTimestamp;
 
             if (foodSpawnIncoming && foodCount < Math.min(foodMaximumCount, size - (snakeCount + wallCount))) {
               if (foodCount > foodSpawnMinimumCount + foodSpawnDelta)
@@ -497,19 +544,15 @@
             }
 
             // ... [Cell]
-            var cellLeft = boardLeft + boardRadius + boardPadding + (cellSubMargin / 2.0) + (((boardSize - (boardPadding * 2.0) - (boardRadius * 2.0)) - (columnCount * cellSize)) / 2.0);
-            var cellTop  = boardTop  + boardRadius + boardPadding + (cellSubMargin / 2.0) + (((boardSize - (boardPadding * 2.0) - (boardRadius * 2.0)) - (rowCount    * cellSize)) / 2.0);
-
             for (var row = rowCount; row--; )
             for (var column = columnCount; column--; ) {
-              var cellSubLeft = cellLeft + (column * cellSize);
-              var cellSubTop  = cellTop  + (row    * cellSize);
-              var cellSubSize = cellSize - cellSubMargin;
-
-              var cellTopLeftRadius     = Math.min(cellSubSize / 2.0, column === 0               && row === 0            ? Math.max(boardRadius, cellRadius) : cellRadius);
-              var cellTopRightRadius    = Math.min(cellSubSize / 2.0, column === columnCount - 1 && row === 0            ? Math.max(boardRadius, cellRadius) : cellRadius);
-              var cellBottomLeftRadius  = Math.min(cellSubSize / 2.0, column === 0               && row === rowCount - 1 ? Math.max(boardRadius, cellRadius) : cellRadius);
-              var cellBottomRightRadius = Math.min(cellSubSize / 2.0, column === columnCount - 1 && row === rowCount - 1 ? Math.max(boardRadius, cellRadius) : cellRadius);
+              var size              = cellSize - (cellMargin < cellSize ? cellMargin : cellSize);
+              var topLeftRadius     = Math.min(size / 2.0, column === 0               && row === 0            ? Math.max(boardRadius, cellRadius) : cellRadius);
+              var topRightRadius    = Math.min(size / 2.0, column === columnCount - 1 && row === 0            ? Math.max(boardRadius, cellRadius) : cellRadius);
+              var left              = cellLeft + (column * cellSize);
+              var top               = cellTop  + (row    * cellSize);
+              var bottomLeftRadius  = Math.min(size / 2.0, column === 0               && row === rowCount - 1 ? Math.max(boardRadius, cellRadius) : cellRadius);
+              var bottomRightRadius = Math.min(size / 2.0, column === columnCount - 1 && row === rowCount - 1 ? Math.max(boardRadius, cellRadius) : cellRadius);
 
               // ...
               context.fillStyle = (column + row) % 2 ? new Color(foregroundColor).darken(0x19, 0x19, 0x19) : foregroundColor;
@@ -528,45 +571,66 @@
                 break generate_wall_color
               }
 
-              generate_snake_color:
-              for (var index = snakes.length; index--; ) {
-                for (var subindex = snakes[index].tail.length; subindex--; )
-                if (column === snakes[index].tail[subindex].column && row === snakes[index].tail[subindex].row) {
-                  context.fillStyle = snakes[index].tailColor;
-                  break generate_snake_color
-                }
+              // generate_snake_color:
+              // for (var index = snakes.length; index--; ) {
+              //   for (var subindex = snakes[index].tail.length; subindex--; )
+              //   if (column === snakes[index].tail[subindex].column && row === snakes[index].tail[subindex].row) {
+              //     context.fillStyle = snakes[index].tailColor;
+              //     break generate_snake_color
+              //   }
 
-                if (column === snakes[index].head.column && row === snakes[index].head.row) {
-                  context.fillStyle = snakes[index].headColor;
-                  break generate_snake_color
-                }
-              }
+              //   if (column === snakes[index].head.column && row === snakes[index].head.row) {
+              //     context.fillStyle = snakes[index].headColor;
+              //     break generate_snake_color
+              //   }
+              // }
 
               context.beginPath();
-                context.arc(alias(cellSubLeft + cellTopLeftRadius  + (cellSubSize * 0)), alias(cellSubTop + cellTopLeftRadius  + (cellSubSize * 0)), alias(cellTopLeftRadius),  Math.PI * 0.0, Math.PI * 2.0);
-                context.arc(alias(cellSubLeft - cellTopRightRadius + (cellSubSize * 1)), alias(cellSubTop + cellTopRightRadius + (cellSubSize * 0)), alias(cellTopRightRadius), Math.PI * 0.0, Math.PI * 2.0);
+                context.arc(alias(left + topLeftRadius  + (size * 0)), alias(top + topLeftRadius  + (size * 0)), alias(topLeftRadius),  Math.PI * 0.0, Math.PI * 2.0);
+                context.arc(alias(left - topRightRadius + (size * 1)), alias(top + topRightRadius + (size * 0)), alias(topRightRadius), Math.PI * 0.0, Math.PI * 2.0);
 
                 context.fill();
               context.closePath();
 
               context.beginPath();
-                context.arc(alias(cellSubLeft - cellBottomRightRadius + (cellSubSize * 1)), alias(cellSubTop - cellBottomRightRadius + (cellSubSize * 1)), alias(cellBottomRightRadius), Math.PI * 0.0, Math.PI * 2.0);
-                context.arc(alias(cellSubLeft + cellBottomLeftRadius  + (cellSubSize * 0)), alias(cellSubTop - cellBottomLeftRadius  + (cellSubSize * 1)), alias(cellBottomLeftRadius),  Math.PI * 0.0, Math.PI * 2.0);
+                context.arc(alias(left - bottomRightRadius + (size * 1)), alias(top - bottomRightRadius + (size * 1)), alias(bottomRightRadius), Math.PI * 0.0, Math.PI * 2.0);
+                context.arc(alias(left + bottomLeftRadius  + (size * 0)), alias(top - bottomLeftRadius  + (size * 1)), alias(bottomLeftRadius),  Math.PI * 0.0, Math.PI * 2.0);
 
                 context.fill();
               context.closePath();
 
-              context.fillRect(alias(cellSubLeft - (Math.max(cellRadius, cellTopLeftRadius)    * 0.0) + (cellSubSize * 0)), alias(cellSubTop + (Math.max(cellRadius, cellTopLeftRadius)    * 1.0) + (cellSubSize * 0)), alias(cellRadius * 2.0), alias(cellSubSize - (cellBottomLeftRadius  + cellTopLeftRadius)));
-              context.fillRect(alias(cellSubLeft - (Math.min(cellRadius, cellTopRightRadius)   * 2.0) + (cellSubSize * 1)), alias(cellSubTop + (Math.max(cellRadius, cellTopRightRadius)   * 1.0) + (cellSubSize * 0)), alias(cellRadius * 2.0), alias(cellSubSize - (cellBottomRightRadius + cellTopRightRadius)));
-              context.fillRect(alias(cellSubLeft + (Math.max(cellRadius, cellTopLeftRadius)    * 1.0) + (cellSubSize * 0)), alias(cellSubTop - (Math.max(cellRadius, cellTopLeftRadius)    * 0.0) + (cellSubSize * 0)), alias(cellSubSize - (cellTopLeftRadius    + cellTopRightRadius)),    alias(cellRadius * 2.0));
-              context.fillRect(alias(cellSubLeft + (Math.max(cellRadius, cellBottomLeftRadius) * 1.0) + (cellSubSize * 0)), alias(cellSubTop - (Math.min(cellRadius, cellBottomLeftRadius) * 2.0) + (cellSubSize * 1)), alias(cellSubSize - (cellBottomLeftRadius + cellBottomRightRadius)), alias(cellRadius * 2.0));
+              context.fillRect(alias(left - (Math.max(cellRadius, topLeftRadius)    * 0.0) + (size * 0)), alias(top + (Math.max(cellRadius, topLeftRadius)    * 1.0) + (size * 0)), alias(cellRadius * 2.0), alias(size - (bottomLeftRadius  + topLeftRadius)));
+              context.fillRect(alias(left - (Math.min(cellRadius, topRightRadius)   * 2.0) + (size * 1)), alias(top + (Math.max(cellRadius, topRightRadius)   * 1.0) + (size * 0)), alias(cellRadius * 2.0), alias(size - (bottomRightRadius + topRightRadius)));
+              context.fillRect(alias(left + (Math.max(cellRadius, topLeftRadius)    * 1.0) + (size * 0)), alias(top - (Math.max(cellRadius, topLeftRadius)    * 0.0) + (size * 0)), alias(size - (topLeftRadius    + topRightRadius)),    alias(cellRadius * 2.0));
+              context.fillRect(alias(left + (Math.max(cellRadius, bottomLeftRadius) * 1.0) + (size * 0)), alias(top - (Math.min(cellRadius, bottomLeftRadius) * 2.0) + (size * 1)), alias(size - (bottomLeftRadius + bottomRightRadius)), alias(cellRadius * 2.0));
 
-              context.fillRect(alias(cellSubLeft + (cellRadius * 1.0)), alias(cellSubTop + (cellRadius * 1.0)), alias(cellSubSize - (cellRadius * 2.0)), alias(cellSubSize - (cellRadius * 2.0)))
+              context.fillRect(alias(left + (cellRadius * 1.0)), alias(top + (cellRadius * 1.0)), alias(size - (cellRadius * 2.0)), alias(size - (cellRadius * 2.0)))
             }
 
-            // Modification > ...
-            context.imageSmoothingEnabled = contextImageSmoothingEnabled;
-            context.imageSmoothingQuality = contextImageSmoothingQuality;
+            // ... [Snake]
+            for (var index = snakes.length; index; ) {
+              var snake     = snakes[--index];
+              var snakeHead = snake.head;
+              var snakeTail = snake.tail;
+
+              var left = cellLeft - ((cellMargin < cellSize ? cellMargin : cellSize) / 2.0) + (snakeHead.column * cellSize);
+              var top  = cellTop  - ((cellMargin < cellSize ? cellMargin : cellSize) / 2.0) + (snakeHead.row    * cellSize);
+
+              // ... [Snake Head]
+              context.fillStyle = snake.headColor;
+
+              context.beginPath();
+                context.arc(alias(left + (cellSize / 2.0)), alias(top + (cellSize / 2.0)), alias(cellSize / 2.0), Math.PI * 0.0, Math.PI * 2.0);
+                context.fill();
+              context.closePath();
+
+              // ... [Snake Tail]
+            }
+
+            // ...
+            boardContext.filter = "url(\"" + aliasSVGURL + '#' + aliasSVGFilterID + "\")";
+            boardContext.drawImage(canvas, 0, 0, boardCanvas.width, boardCanvas.height);
+            boardContext.filter = boardContextFilter;
 
             /* ... */
             requestAnimationFrame(render)
@@ -598,7 +662,62 @@
             vegan                : {configurable: false, enumerable: false, value: true,             writable: false},
             walls                : {configurable: false, enumerable: false, value: new Collection(), writable: false},
 
-            size: {configurable: false, enumerable: false, get: function() { return this.columnCount * this.rowCount }}
+            size: {configurable: false, enumerable: false, get: function() { return this.columnCount * this.rowCount }},
+
+            spawn: {configurable: false, enumerable: false, value: function spawn() {
+              var food       = this.food;
+              var foodCount  = food.length;
+              var column     = -1;
+              var row        = -1;
+              var snake      = new Snake(new SnakeHead(this));
+              var snakes     = this.snakes;
+              var snakeCount = (() => { var count = snakes.length; for (var index = count; index; ) count += snakes[--index].tail.length; return count })();
+              var walls      = this.walls;
+              var wallCount  = walls.length;
+
+              // ...
+              if (this.size <= foodCount + snakeCount + wallCount)
+              return false;
+
+              generate_coordinates:
+              while (true) {
+                column = column !== -1 ? Math.trunc(this.columnCount * Math.random()) : Math.trunc(this.columnCount / 2);
+                row    = row    !== -1 ? Math.trunc(this.rowCount    * Math.random()) : Math.trunc(this.rowCount    / 2);
+
+                for (var index = food.length; index--; ) {
+                  if (column === food[index].column && row === food[index].row)
+                  continue generate_coordinates
+                }
+
+                for (var index = walls.length; index--; ) {
+                  if (column === walls[index].column && row === walls[index].row)
+                  continue generate_coordinates
+                }
+
+                for (var index = snakes.length; index--; ) {
+                  if (column === snakes[index].head.column && row === snakes[index].head.row)
+                  continue generate_coordinates;
+
+                  for (var subindex = snakes[index].tail.length; subindex--; ) {
+                    if (column === snakes[index].tail[subindex].column && row === snakes[index].tail[subindex].row)
+                    continue generate_coordinates
+                  }
+                }
+
+                break
+              }
+
+              if (snakes.add(snake)) {
+                snake.head.column = column;
+                snake.head.row    = row;
+                snake.headColor   = new Color(Math.trunc(Math.random() * 0xFF), Math.trunc(Math.random() * 0xFF), Math.trunc(Math.random() * 0xFF));
+                snake.tailColor   = new Color(snake.headColor).darken(0x13, 0x13, 0x13);
+
+                return true
+              }
+
+              return false
+            }, writable: false}
           }));
 
         /* Constant > ... */
