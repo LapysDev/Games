@@ -11,8 +11,8 @@
       /* DOM Elements */
         /* <body> */
         body {
-          margin   : 0;
-          overflow : hidden
+          margin  : 0;
+          overflow: hidden
         }
 
         /* <body>, <html> */
@@ -64,9 +64,9 @@
   <body tabindex=-1>
     <canvas id=canvas style="height: 100%; image-rendering: pixelated; width: 100%" tabindex=-1> </canvas>
 
-    <input autocomplete=off max=65 min=1 onchange="BOARD.columnCount = this.value; BOARD.foodMaximumCount = BOARD.columnCount * BOARD.rowCount" oninput="BOARD.columnCount = this.value; BOARD.foodMaximumCount = BOARD.columnCount * BOARD.rowCount" style="bottom: 3%; font-family: monospace; left : 10%; position: absolute; text-align: center; width: 33.333333%" tabindex=2 type=number step=1 value="15"/>
-    <input autocomplete=off max=65 min=1 onchange="BOARD.rowCount    = this.value; BOARD.foodMaximumCount = BOARD.columnCount * BOARD.rowCount" oninput="BOARD.rowCount    = this.value; BOARD.foodMaximumCount = BOARD.columnCount * BOARD.rowCount" style="bottom: 3%; font-family: monospace; right: 10%; position: absolute; text-align: center; width: 33.333333%" tabindex=2 type=number step=1 value="10"/>
-    <input autocomplete=off onblur="this.style.opacity = 0.3" onclick="" onfocus="this.style.opacity = 1.0" onmouseleave="this.style.opacity = 0.3" onmouseover="this.style.opacity = 1.0" style="border-radius: 50px; bottom: 8%; cursor: pointer; font: 25px monospace; height: 50px; left: 0; margin: auto; opacity: 0.3; padding: 0; position: absolute; right: 0; transition: 100ms ease-in; width: 60%" tabindex=1 type=button value="spawn snek 🐍"/>
+    <input autocomplete=off max=65 min=1 onchange="BOARD.columnCount = this.value; BOARD.foodMaximumCount = BOARD.size" oninput="BOARD.columnCount = this.value; BOARD.foodMaximumCount = BOARD.size" style="bottom: 3%; font-family: monospace; left : 10%; position: absolute; text-align: center; width: 33.333333%" tabindex=2 type=number step=1 value="15"/>
+    <input autocomplete=off max=65 min=1 onchange="BOARD.rowCount    = this.value; BOARD.foodMaximumCount = BOARD.size" oninput="BOARD.rowCount    = this.value; BOARD.foodMaximumCount = BOARD.size" style="bottom: 3%; font-family: monospace; right: 10%; position: absolute; text-align: center; width: 33.333333%" tabindex=2 type=number step=1 value="10"/>
+    <input autocomplete=off onblur="this.style.opacity = 0.3" onclick="" onfocus="this.style.opacity = 1.0" onmouseleave="this.style.opacity = 0.3" onmouseover="this.style.opacity = 1.0" style="border-radius: 50px; bottom: 8%; cursor: pointer; font: 125% monospace; height: 50px; left: 0; margin: auto; opacity: 0.3; padding: 0; position: absolute; right: 0; transition: 100ms ease-in; width: 60%" tabindex=1 type=button value="spawn snek 🐍"/>
 
     <!-- Document Script -->
     <script language=javascript type=text/javascript>
@@ -74,41 +74,53 @@
         /* Class */
           // Cell
           function Cell(board, column, row) {
-            var cell          = this;
-            var onboardchange = null;
+            var board  = board;
+            var column = column;
+            var row    = row;
 
             // ...
-            Object.defineProperty(this, "board",         {configurable: false, enumerable: false, get: function() { return board         }, set: function(object)     { if (object instanceof Board) { board = object; if (null !== onboardchange) cell.onboardchange(object) } }});
-            Object.defineProperty(this, "column",        {configurable: false, enumerable: true,  get: function() { return column        }, set: function(coordinate) { column        = +coordinate | 0; column *= column > 0                                                   }});
-            Object.defineProperty(this, "onboardchange", {configurable: false, enumerable: false, get: function() { return onboardchange }, set: function(handler)    { onboardchange = null === handler || "function" === typeof handler ? handler : onboardchange             }});
-            Object.defineProperty(this, "row",           {configurable: false, enumerable: true,  get: function() { return row           }, set: function(coordinate) { row           = +coordinate | 0; row    *= row    > 0                                                   }});
+            Object.defineProperty(this, "board",  {configurable: false, enumerable: false, get: function() { return board  }, set: function(object)     { board  = object instanceof Board ? object : owner }});
+            Object.defineProperty(this, "column", {configurable: false, enumerable: true,  get: function() { return column }, set: function(coordinate) { column = +coordinate | 0; column *= column > 0    }});
+            Object.defineProperty(this, "row",    {configurable: false, enumerable: true,  get: function() { return row    }, set: function(coordinate) { row    = +coordinate | 0; row    *= row    > 0    }});
 
             if (false === ("object" === typeof board && board instanceof Board))
-            throw TypeError("`Cells` must be part of a single `Board`");
+            throw new TypeError("`Cell`s must be part of a (single) `Board`");
 
-            this.board         = board;
-            this.column        = arguments.length > 1 ? arguments[1] instanceof Cell ? arguments[1].column : column : 0;
-            this.onboardchange = onboardchange;
-            this.row           = arguments.length > 1 ? arguments[1] instanceof Cell ? arguments[1].row    : row    : 0;
+            this.column = arguments.length > 1 ? arguments[1] instanceof Cell ? arguments[1].column : column : 0;
+            this.row    = arguments.length > 1 ? arguments[1] instanceof Cell ? arguments[1].row    : row    : 0;
 
             /* ... */
             Object.preventExtensions(this)
           }
             Cell.prototype = Object.freeze(Object.create(null, {
-              board        : {configurable: false, enumerable: false, value: null, writable: false},
-              column       : {configurable: false, enumerable: false, value: 0,    writable: false},
-              onboardchange: {configurable: false, enumerable: false, value: 0,    writable: false},
-              row          : {configurable: false, enumerable: false, value: 0,    writable: false},
+              board      : {configurable: false, enumerable: false, value: null, writable: false},
+              column     : {configurable: false, enumerable: false, value: 0,    writable: false},
+              constructor: {configurable: false, enumerable: false, value: Cell, writable: false},
+              row        : {configurable: false, enumerable: false, value: 0,    writable: false},
 
-              toString: {configurable: false, enumerable: false, value: function toString() { return "Cell{" + this.row + ", " + this.column + '}'      }, writable: false},
-              valueOf : {configurable: false, enumerable: false, value: function valueOf () { return this.column + (this.board.columnCount * this.row)  }, writable: false}
+              toString: {configurable: false, enumerable: false, value: function toString() { return "Cell{" + this.row + ", " + this.column + '}'     }, writable: false},
+              valueOf : {configurable: false, enumerable: false, value: function valueOf () { return this.column + (this.row * this.board.columnCount) }, writable: false}
             }));
 
-            // Snake (Head, Tail)
-            function SnakeHead(board, column, row) { return arguments.length > 1 ? arguments[1] instanceof Cell ? new Cell(board, arguments[1]) : new Cell(board, column, row) : new Cell(board) }
-            function SnakeTail(column, row)        { return arguments[0] instanceof Cell ? new Cell(null, arguments[0]) : new Cell(null, column, row) }
+            // Snake Head
+            function SnakeHead(board, column, row) {
+              return arguments.length > 1 ? arguments[1] instanceof Cell ? new Cell(board, arguments[1]) : new Cell(board, column, row) : new Cell(board);
+            }
               SnakeHead.prototype = Cell.prototype;
+
+            function SnakeTail(column, row) {
+              return arguments[0] instanceof Cell ? new Cell(null, arguments[0]) : new Cell(null, column, row)
+            }
               SnakeTail.prototype = Cell.prototype;
+
+            // Wall
+            function Wall(board, column, row) {
+              if (false === ("object" === typeof snake && snake instanceof Board))
+              throw new TypeError("`Wall`s must be part of a single `Board`");
+
+              return arguments.length > 1 ? arguments[1] instanceof Cell ? new Cell(board, arguments[1]) : new Cell(board, column, row) : new Cell(board)
+            }
+              Wall.prototype = Cell.prototype;
 
           // Collection
           function Collection(capacity) {
@@ -116,26 +128,31 @@
             var length   = 0;
 
             // ...
-            for (let index = capacity; index; )
-            if (false === Object.prototype.hasOwnProperty.call(Collection.prototype, --index)) {
+            for (let index = capacity; index--; ) {
+              if (Object.prototype.hasOwnProperty.call(Collection.prototype, index))
+              break;
+
               Object.defineProperty(Collection.prototype, index, {
                 configurable: false,
                 enumerable  : false,
                 get         : function() { return null },
                 set         : function(object) {
-                  if (index < capacity) {
-                    var constructor = "object" === typeof object && null !== object ? object.constructor : null;
+                  var constructor = "object" === typeof object && null !== object ? object.constructor : null;
 
-                    // ...
-                    Object.defineProperty(this, index, {
-                      configurable: false,
-                      enumerable  : true,
-                      get         : function() { return object },
-                      set         : function(subobject) { if ("object" === typeof subobject) { if (null === subobject) object = subobject; else { constructor = subobject.constructor; object = subobject } } }
-                    });
+                  // ...
+                  Object.defineProperty(this, index, {
+                    configurable: false,
+                    enumerable  : true,
+                    get         : function() { return index < this.length ? object : null },
+                    set         : function(subobject) {
+                      if (index >= this.length || undefined === subobject) return;
 
-                    this[index] = object
-                  }
+                      if (null === subobject) { object = subobject; return }
+                      if (null === constructor || subobject instanceof constructor) { constructor = subobject.constructor; object = subobject }
+                    }
+                  });
+
+                  this[index] = object
                 }
               })
             }
@@ -144,11 +161,12 @@
             Object.defineProperty(this, "length", {configurable: false, enumerable: false, get: function() { return length }, set: function(count) { length = +count | 0; length = (length > 0) * (capacity < length ? capacity : length) }})
           }
             Collection.prototype = Object.create(null, {
-              length: {configurable: false, enumerable: false, value: 0, writable: false},
+              constructor: {configurable: false, enumerable: false, value: Collection, writable: false},
+              length     : {configurable: false, enumerable: false, value: 0,          writable: false},
 
-              add   : {configurable: false, enumerable: false, value: function add   (objects) {                                                                                                                                                                                                                   }, writable: false},
-              remove: {configurable: false, enumerable: false, value: function remove(objects) { var length = this.length; for (var index = arguments.length; index--; ) for (var subindex = length; subindex; ) { if (arguments[index] === this[subindex]) this[subindex] = this[--length] } this.length = length }, writable: false},
-              splice: {configurable: false, enumerable: false, value: function splice()        { /* ->> Display like an `Array` in the Chrome Dev console */                                                                                                                                                       }, writable: false}
+              add   : {configurable: false, enumerable: false, value: function add   (objects) { /* Do nothing... */                                                                                                                                                                                                            }, writable: false},
+              remove: {configurable: false, enumerable: false, value: function remove(objects) { var length = this.length; for (var index = arguments.length; index--; ) { for (var subindex = length; subindex--; ) if (arguments[index] === this[subindex]) { this[subindex] = this[--length]; break } } this.length = length }, writable: false},
+              splice: {configurable: false, enumerable: false, value: function splice()        { /* ->> Display like an `Array` in the Chrome Dev console */                                                                                                                                                                    }, writable: false}
             });
 
           // Color
@@ -171,22 +189,23 @@
             Object.preventExtensions(this)
           }
             Color.prototype = Object.freeze(Object.create(null, {
-              blue : {configurable: false, enumerable: true,  value: 0, writable: false},
-              green: {configurable: false, enumerable: true,  value: 0, writable: false},
-              red  : {configurable: false, enumerable: true,  value: 0, writable: false},
-              alpha: {configurable: false, enumerable: true,  value: 0, writable: false},
+              blue       : {configurable: false, enumerable: true, value: 0x00,  writable: false},
+              green      : {configurable: false, enumerable: true, value: 0x00,  writable: false},
+              red        : {configurable: false, enumerable: true, value: 0x00,  writable: false},
+              alpha      : {configurable: false, enumerable: true, value: 0x00,  writable: false},
+              constructor: {configurable: false, enumerable: true, value: Color, writable: false},
 
               darken  : {configurable: false, enumerable: false, value: function darken  (red, green, blue) { var color = arguments.length === 1 ? new Color(arguments[0]) : new Color(red, green, blue, 0x1); this.blue -= color.blue;                             this.green -= color.green;                              this.red -= color.red;                            return this }, writable: false},
               lighten : {configurable: false, enumerable: false, value: function lighten (red, green, blue) { var color = arguments.length === 1 ? new Color(arguments[0]) : new Color(red, green, blue, 0x1); this.blue  = Math.min(0xFF, color.blue + this.blue); this.green  = Math.min(0xFF, color.green + this.green); this.red  = Math.min(0xFF, color.red + this.red); return this }, writable: false},
               toString: {configurable: false, enumerable: false, value: function toString()                 { return "rgba(" + this.red + ", " + this.green + ", " + this.blue + ", " + this.alpha + ')'                                                                                                                                                                                  }, writable: false},
-              valueOf : {configurable: false, enumerable: false, value: function valueOf ()                 { return 0x000000                                                                                                                                                                                                                                                             }, writable: false}
+              valueOf : {configurable: false, enumerable: false, value: function valueOf ()                 { return (this.alpha << 0x18) | (this.blue << 0x00) | (this.green << 0x08) | (this.red << 0x10)                                                                                                                                                                               }, writable: false}
             }));
 
             Object.defineProperty(Color, "BLACK",   {configurable: false, enumerable: true, value: new Color(0x00, 0x00, 0x00)});
             Object.defineProperty(Color, "BLUE",    {configurable: false, enumerable: true, value: new Color(0x00, 0x00, 0xFF)});
             Object.defineProperty(Color, "CYAN",    {configurable: false, enumerable: true, value: new Color(0x00, 0xFF, 0xFF)});
-            Object.defineProperty(Color, "GREEN",   {configurable: false, enumerable: true, value: new Color(0x00, 0xFF, 0x00)});
             Object.defineProperty(Color, "GRAY",    {configurable: false, enumerable: true, value: new Color(0x69, 0x69, 0x69)});
+            Object.defineProperty(Color, "GREEN",   {configurable: false, enumerable: true, value: new Color(0x00, 0xFF, 0x00)});
             Object.defineProperty(Color, "GREY",    {configurable: false, enumerable: true, value: new Color(0x69, 0x69, 0x69)});
             Object.defineProperty(Color, "MAGENTA", {configurable: false, enumerable: true, value: new Color(0xFF, 0x00, 0xFF)});
             Object.defineProperty(Color, "RED",     {configurable: false, enumerable: true, value: new Color(0xFF, 0x00, 0x00)});
@@ -195,10 +214,16 @@
 
         // Food
         function Food(cell, type) {
-          Object.defineProperty(this, "cell", {configurable: false, enumerable: true,  get: function() { return cell }, set: function(object) { cell  = "object" === typeof object && (null === object || object instanceof Cell) ? object : cell }});
-          Object.defineProperty(this, "type", {configurable: false, enumerable: true,  get: function() { return type }, set: function(option) { for (var name in Food) if (Food[name] === option) type = option }});
+          var cell = cell;
+          var type = type;
 
-          this.cell = "object" === typeof cell && (null === cell || cell instanceof Cell) ? cell : null;
+          // ...
+          Object.defineProperty(this, "cell", {configurable: false, enumerable: true,  get: function() { return cell }, set: function(object) { cell  = "object" === typeof object && (null === object || object instanceof Cell) ? object : cell }});
+          Object.defineProperty(this, "type", {configurable: false, enumerable: true,  get: function() { return type }, set: function(option) { for (var name in Food) if (Food[name] === option) { type = option; break }                        }});
+
+          if (false === ("object" === typeof cell && cell instanceof Cell))
+          throw new TypeError("`Food`s must be within a (single) `Cell`");
+
           this.type = Food.APPLE;
           this.type = type;
 
@@ -206,103 +231,91 @@
           Object.preventExtensions(this)
         }
           Food.prototype = Object.freeze(Object.create(null, {
-            cell: {configurable: false, enumerable: false, value: null,       writable: false},
-            type: {configurable: false, enumerable: false, value: Food.APPLE, writable: false},
+            cell       : {configurable: false, enumerable: false, value: null,       writable: false},
+            constructor: {configurable: false, enumerable: false, value: Food,       writable: false},
+            type       : {configurable: false, enumerable: false, value: Food.APPLE, writable: false},
 
             board : {configurable: false, enumerable: false, get: function() { return null === this.cell ? null : this.cell.board  }, set: function(board)  { if (null !== this.cell) this.cell.board  = board  }},
             column: {configurable: false, enumerable: false, get: function() { return null === this.cell ? null : this.cell.column }, set: function(column) { if (null !== this.cell) this.cell.column = column }},
-            row   : {configurable: false, enumerable: false, get: function() { return null === this.cell ? null : this.cell.row    }, set: function(row)    { if (null !== this.cell) this.cell.row    = row    }},
+            row   : {configurable: false, enumerable: false, get: function() { return null === this.cell ? null : this.cell.row    }, set: function(row)    { if (null !== this.cell) this.cell.row    = row    }}
           }));
 
-          Object.defineProperty(Food, "BADGER",   {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "CAMEL",    {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "CAT",      {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "CHIPMUNK", {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "COW",      {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "DOG",      {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "GIRAFFE",  {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "GOAT",     {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "HORSE",    {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "MONKEY",   {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "MOUSE",    {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "PIG",      {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "RABBIT",   {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "RACCOON",  {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "RAM",      {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "RAT",      {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "SHEEP",    {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "SLOTH",    {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "ZEBRA",    {configurable: false, enumerable: true, value: Object.create(null), writable: false});
+          Object.defineProperty(Food, "APPLE",       {configurable: false, enumerable: true, value: 0x01, writable: false});
+          Object.defineProperty(Food, "BANANA",      {configurable: false, enumerable: true, value: 0x02, writable: false});
+          Object.defineProperty(Food, "BLUEBERRIES", {configurable: false, enumerable: true, value: 0x03, writable: false});
+          Object.defineProperty(Food, "CHERRIES",    {configurable: false, enumerable: true, value: 0x04, writable: false});
+          Object.defineProperty(Food, "COCONUT",     {configurable: false, enumerable: true, value: 0x05, writable: false});
+          Object.defineProperty(Food, "GRAPES",      {configurable: false, enumerable: true, value: 0x06, writable: false});
+          Object.defineProperty(Food, "KIWI",        {configurable: false, enumerable: true, value: 0x07, writable: false});
+          Object.defineProperty(Food, "MANGO",       {configurable: false, enumerable: true, value: 0x08, writable: false});
+          Object.defineProperty(Food, "MELON",       {configurable: false, enumerable: true, value: 0x09, writable: false});
+          Object.defineProperty(Food, "LEMON",       {configurable: false, enumerable: true, value: 0x0A, writable: false});
+          Object.defineProperty(Food, "OLIVE",       {configurable: false, enumerable: true, value: 0x0B, writable: false});
+          Object.defineProperty(Food, "PEACH",       {configurable: false, enumerable: true, value: 0x0C, writable: false});
+          Object.defineProperty(Food, "PEAR",        {configurable: false, enumerable: true, value: 0x0D, writable: false});
+          Object.defineProperty(Food, "PINEAPPLE",   {configurable: false, enumerable: true, value: 0x0E, writable: false});
+          Object.defineProperty(Food, "ORANGE",      {configurable: false, enumerable: true, value: 0x0F, writable: false});
+          Object.defineProperty(Food, "STRAWBERRY",  {configurable: false, enumerable: true, value: 0x10, writable: false});
+          Object.defineProperty(Food, "TANGERINE",   {configurable: false, enumerable: true, value: 0x11, writable: false});
+          Object.defineProperty(Food, "TOMATO",      {configurable: false, enumerable: true, value: 0x12, writable: false});
+          Object.defineProperty(Food, "WATERMELON",  {configurable: false, enumerable: true, value: 0x13, writable: false});
 
-          Object.defineProperty(Food, "APPLE",       {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "BANANA",      {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "BLUEBERRIES", {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "CHERRIES",    {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "COCONUT",     {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "GRAPES",      {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "KIWI",        {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "MANGO",       {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "MELON",       {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "LEMON",       {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "OLIVE",       {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "PEACH",       {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "PEAR",        {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "PINEAPPLE",   {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "ORANGE",      {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "STRAWBERRY",  {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "TANGERINE",   {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "TOMATO",      {configurable: false, enumerable: true, value: Object.create(null), writable: false});
-          Object.defineProperty(Food, "WATERMELON",  {configurable: false, enumerable: true, value: Object.create(null), writable: false});
+          Object.defineProperty(Food, "BADGER",   {configurable: false, enumerable: true, value: 0x14, writable: false});
+          Object.defineProperty(Food, "CAMEL",    {configurable: false, enumerable: true, value: 0x15, writable: false});
+          Object.defineProperty(Food, "CAT",      {configurable: false, enumerable: true, value: 0x16, writable: false});
+          Object.defineProperty(Food, "CHIPMUNK", {configurable: false, enumerable: true, value: 0x17, writable: false});
+          Object.defineProperty(Food, "COW",      {configurable: false, enumerable: true, value: 0x18, writable: false});
+          Object.defineProperty(Food, "DOG",      {configurable: false, enumerable: true, value: 0x19, writable: false});
+          Object.defineProperty(Food, "GIRAFFE",  {configurable: false, enumerable: true, value: 0x1A, writable: false});
+          Object.defineProperty(Food, "GOAT",     {configurable: false, enumerable: true, value: 0x1B, writable: false});
+          Object.defineProperty(Food, "HORSE",    {configurable: false, enumerable: true, value: 0x1C, writable: false});
+          Object.defineProperty(Food, "MONKEY",   {configurable: false, enumerable: true, value: 0x1D, writable: false});
+          Object.defineProperty(Food, "MOUSE",    {configurable: false, enumerable: true, value: 0x1E, writable: false});
+          Object.defineProperty(Food, "PIG",      {configurable: false, enumerable: true, value: 0x1F, writable: false});
+          Object.defineProperty(Food, "RABBIT",   {configurable: false, enumerable: true, value: 0x20, writable: false});
+          Object.defineProperty(Food, "RACCOON",  {configurable: false, enumerable: true, value: 0x21, writable: false});
+          Object.defineProperty(Food, "RAM",      {configurable: false, enumerable: true, value: 0x22, writable: false});
+          Object.defineProperty(Food, "RAT",      {configurable: false, enumerable: true, value: 0x23, writable: false});
+          Object.defineProperty(Food, "SHEEP",    {configurable: false, enumerable: true, value: 0x24, writable: false});
+          Object.defineProperty(Food, "SLOTH",    {configurable: false, enumerable: true, value: 0x25, writable: false});
+          Object.defineProperty(Food, "ZEBRA",    {configurable: false, enumerable: true, value: 0x26, writable: false});
 
           Object.preventExtensions(Food);
 
         // Snake
         function Snake(head) {
-          var snake = this;
-
+          var head           = head;
           var headColor      = Snake.prototype.headColor;
           var tailColor      = Snake.prototype.tailColor;
           var tailCollection = new Collection();
 
           // ...
-          function reform() {
-            snake.tail = new Collection(this.board.size)
-          }
+          Object.defineProperty(this, "board",     {configurable: false, enumerable: false, get: function() { return head.board     }, set: function(board)      { head.board = board                                                                                                                                                                                                              }});
+          Object.defineProperty(this, "head",      {configurable: false, enumerable: false, get: function() { return head           }, set: function(cell)       { if ("object" !== typeof cell) return; if (null === cell) { head = null; tailCollection = new Collection() } else if (cell instanceof Cell) { cell.owner = this; head = cell; tailCollection = new Collection(cell.board.size) } }});
+          Object.defineProperty(this, "headColor", {configurable: false, enumerable: false, get: function() { return headColor      }, set: function(color)      { headColor      = new Color(color)                                                                                                                                                                                               }});
+          Object.defineProperty(this, "tail",      {configurable: false, enumerable: false, get: function() { return tailCollection }, set: function(collection) { tailCollection = "object" === typeof collection && collection instanceof Collection ? collection : tailCollection                                                                                                               }});
+          Object.defineProperty(this, "tailColor", {configurable: false, enumerable: false, get: function() { return tailColor      }, set: function(color)      { tailColor      = new Color(color)                                                                                                                                                                                               }});
 
-          // ...
-          Object.defineProperty(this, "head", {
-            configurable: false,
-            enumerable  : false,
-            get         : function() { return head },
-            set         : function(object) {
-              if ("object" === typeof object) {
-                if (null === object) { tailCollection = new Collection(); if (head instanceof Cell && head.onboardchange === reform) { head.onboardchange = null } head = object }
-                else if (object instanceof Cell) { tailCollection = new Collection(object.board.size); object.onboardchange = reform; head = object }
-              }
-            }
-          });
-
-          Object.defineProperty(this, "headColor", {configurable: false, enumerable: false, get: function() { return headColor      }, set: function(color)      { headColor      = new Color(color)                                                                                 }});
-          Object.defineProperty(this, "tail",      {configurable: false, enumerable: false, get: function() { return tailCollection }, set: function(collection) { tailCollection = "object" === typeof collection && collection instanceof Collection ? collection : tailCollection }});
-          Object.defineProperty(this, "tailColor", {configurable: false, enumerable: false, get: function() { return tailColor      }, set: function(color)      { tailColor      = new Color(color)                                                                                 }});
-
-          this.head = "object" === typeof head && (null === head || head instanceof Cell) ? head : null;
+          if (false === ("object" === typeof head && head instanceof Cell))
+          throw new TypeError("`Snake`s must have a (single) `Cell` head");
 
           /* ... */
           Object.preventExtensions(this)
         }
           Snake.prototype = Object.freeze(Object.create(null, {
-            head     : {configurable: false, enumerable: false, value: null,             writable: false},
-            headColor: {configurable: false, enumerable: false, value: Color.GREY,       writable: false},
-            tail     : {configurable: false, enumerable: false, value: new Collection(), writable: false},
-            tailColor: {configurable: false, enumerable: false, value: Color.BLACK,      writable: false}
+            board      : {configurable: false, enumerable: false, value: null,             writable: false},
+            constructor: {configurable: false, enumerable: false, value: Snake,            writable: false},
+            head       : {configurable: false, enumerable: false, value: null,             writable: false},
+            headColor  : {configurable: false, enumerable: false, value: Color.GREY,       writable: false},
+            tail       : {configurable: false, enumerable: false, value: new Collection(), writable: false},
+            tailColor  : {configurable: false, enumerable: false, value: Color.BLACK,      writable: false}
           }));
 
         // Board
         function Board(context) {
-          var board           = this;
-          var carnivorousFood = [Food.BADGER, Food.CAMEL, Food.CAT, Food.CHIPMUNK, Food.COW, Food.DOG, Food.GIRAFFE, Food.GOAT, Food.HORSE, Food.MONKEY, Food.MOUSE, Food.PIG, Food.RABBIT, Food.RACCOON, Food.RAM, Food.RAT, Food.SHEEP, Food.SLOTH, Food.ZEBRA];
-          var herbivorousFood = [Food.APPLE, Food.BANANA, Food.BLUEBERRIES, Food.CHERRIES, Food.COCONUT, Food.GRAPES, Food.KIWI, Food.MANGO, Food.MELON, Food.LEMON, Food.OLIVE, Food.PEACH, Food.PEAR, Food.PINEAPPLE, Food.ORANGE, Food.STRAWBERRY, Food.TANGERINE, Food.TOMATO, Food.WATERMELON];
+          var BOARD  = this;
+          var MEATS  = [Food.BADGER, Food.CAMEL, Food.CAT, Food.CHIPMUNK, Food.COW, Food.DOG, Food.GIRAFFE, Food.GOAT, Food.HORSE, Food.MONKEY, Food.MOUSE, Food.PIG, Food.RABBIT, Food.RACCOON, Food.RAM, Food.RAT, Food.SHEEP, Food.SLOTH, Food.ZEBRA];
+          var PLANTS = [Food.APPLE, Food.BANANA, Food.BLUEBERRIES, Food.CHERRIES, Food.COCONUT, Food.GRAPES, Food.KIWI, Food.MANGO, Food.MELON, Food.LEMON, Food.OLIVE, Food.PEACH, Food.PEAR, Food.PINEAPPLE, Food.ORANGE, Food.STRAWBERRY, Food.TANGERINE, Food.TOMATO, Food.WATERMELON];
 
           var backgroundColor       = Board.prototype.backgroundColor;
           var boardMargin           = Board.prototype.boardMargin;
@@ -317,80 +330,96 @@
           var foodSpawnTimer        = Board.prototype.foodSpawnTimer;
           var foregroundColor       = Board.prototype.foregroundColor;
           var rowCount              = Board.prototype.rowCount;
-          var snakeMaximumCount     = 0;
-          var timestamp             = new Date();
           var vegan                 = Board.prototype.vegan;
 
-          var food   = new Collection();
+          var food   = new Collection(0);
           var snakes = new Collection(1);
-          var walls  = new Collection();
+          var walls  = new Collection(0);
+
+          var canvas            = null;
+          var context           = context;
+          var snakeMaximumCount = 0;
+          var timestamp         = new Date();
 
           // ...
+          function getBoardClientSize() {
+            return Math.max(0.0, Math.min(canvas.height, canvas.width) - (boardMargin * 2.0))
+          }
+
+          function getCellClientSize(size) {
+            return (size - (boardPadding * 2.0) - (boardRadius * 2.0)) / (columnCount > rowCount ? columnCount : rowCount)
+          }
+
           function resize() {
             var recentFood   = food;
             var recentSnakes = snakes;
             var recentWalls  = walls;
+            var size         = BOARD.size;
+            var snakeCount   = (() => { var count = snakes.length; for (var index = count; index; ) count += snakes[--index].tail.length; return count })();
+            var wallCount    = walls.length;
 
             // ...
-            food  = new Collection(foodMaximumCount);
-            walls = new Collection(board.size);
+            food   = new Collection(Math.min(foodMaximumCount, size - (snakeCount + wallCount)));
+            walls  = new Collection(BOARD.size);
+            snakes = size > snakeMaximumCount ? new Collection(snakeMaximumCount = size) : snakes;
 
-            for (var index = recentFood .length; index--; ) { if (columnCount >= recentFood [index].column && rowCount >= recentFood [index].row) food .add(recentFood [index]) }
-            for (var index = recentWalls.length; index--; ) { if (columnCount >= recentWalls[index].column && rowCount >= recentWalls[index].row) walls.add(recentWalls[index]) }
-
-            if (board.size > snakeMaximumCount) {
-              snakes = new Collection(snakeMaximumCount = board.size);
-              for (var index = recentSnakes.length; index; ) snakes.add(recentSnakes[--index])
-            }
+            for (var index = recentFood  .length; index--; ) { if (columnCount > recentFood  [index].column && rowCount > recentFood  [index].row) void food .add(recentFood [index]) }
+            for (var index = recentWalls .length; index--; ) { if (columnCount > recentWalls [index].column && rowCount > recentWalls [index].row) void walls.add(recentWalls[index]) }
+            for (var index = recentSnakes.length; index--; ) { if (recentSnakes === snakes) break; void snakes.add(recentSnakes[index]) }
           }
 
           // ...
+          Object.defineProperty(this, "backgroundColor", {configurable: false, enumerable: false, get: function() { return backgroundColor }, set: function(color) { backgroundColor = new Color(color) }});
+          Object.defineProperty(this, "foregroundColor", {configurable: false, enumerable: false, get: function() { return foregroundColor }, set: function(color) { foregroundColor = new Color(color) }});
+
+          Object.defineProperty(this, "boardMargin",           {configurable: false, enumerable: false, get: function() { return boardMargin           }, set: function(margin)       { boardMargin           = +margin;           boardMargin          *= boardMargin    > 0                                                                }});
+          Object.defineProperty(this, "boardPadding",          {configurable: false, enumerable: false, get: function() { return boardPadding          }, set: function(padding)      { boardPadding          = +padding;          boardPadding         *= boardPadding   > 0                                                                }});
+          Object.defineProperty(this, "boardRadius",           {configurable: false, enumerable: false, get: function() { return boardRadius           }, set: function(radius)       { boardRadius           = +radius;           boardRadius          *= boardRadius    > 0                                                                }});
+          Object.defineProperty(this, "cellMargin",            {configurable: false, enumerable: false, get: function() { return cellMargin            }, set: function(margin)       { cellMargin            = +margin;           cellMargin           *= cellMargin     > 0                                                                }});
+          Object.defineProperty(this, "cellRadius",            {configurable: false, enumerable: false, get: function() { return cellRadius            }, set: function(radius)       { cellRadius            = +radius;           cellRadius           *= cellRadius     > 0                                                                }});
+          Object.defineProperty(this, "columnCount",           {configurable: false, enumerable: false, get: function() { return columnCount           }, set: function(count)        { columnCount           = +count        | 0; columnCount          *= columnCount    > 0; this.foodMaximumCount = Math.min(foodMaximumCount, this.size) }});
+          Object.defineProperty(this, "foodSpawnDelta",        {configurable: false, enumerable: false, get: function() { return foodSpawnDelta        }, set: function(delta)        { foodSpawnDelta        = +delta        | 0; foodSpawnDelta       *= foodSpawnDelta > 0                                                                }});
+          Object.defineProperty(this, "foodSpawnMinimumCount", {configurable: false, enumerable: false, get: function() { return foodSpawnMinimumCount }, set: function(count)        { foodSpawnMinimumCount = +count        | 0; foodSpawnMinimumCount = foodSpawnMinimumCount > 1 ? foodSpawnMinimumCount : 1                             }});
+          Object.defineProperty(this, "foodSpawnTimer",        {configurable: false, enumerable: false, get: function() { return foodSpawnTimer        }, set: function(milliseconds) { foodSpawnTimer        = +milliseconds | 0; foodSpawnTimer       *= foodSpawnTimer > 0                                                                }});
+          Object.defineProperty(this, "rowCount",              {configurable: false, enumerable: false, get: function() { return rowCount              }, set: function(count)        { rowCount              = +count        | 0; rowCount             *= rowCount       > 0; this.foodMaximumCount = Math.min(foodMaximumCount, this.size) }});
+          Object.defineProperty(this, "vegan",                 {configurable: false, enumerable: false, get: function() { return vegan                 }, set: function(option)       { vegan                 = !!option                                                                                                                     }});
+
+          Object.defineProperty(this, "context",          {configurable: false, enumerable: false, get: function() { return context          }, set: function(object) { if ("object" === typeof object && (object instanceof CanvasRenderingContext2D || object instanceof OffscreenCanvasRenderingContext2D)) { canvas = object.canvas; context = object } }});
+          Object.defineProperty(this, "foodMaximumCount", {configurable: false, enumerable: false, get: function() { return foodMaximumCount }, set: function(count)  { var recentFoodMaximumCount = foodMaximumCount; foodMaximumCount = +count | 0; foodMaximumCount *= foodMaximumCount > 0; if (foodMaximumCount !== recentFoodMaximumCount) resize()   }});
+
+          Object.defineProperty(this, "boardSize", {configurable: false, enumerable: false, get: function() { return getBoardClientSize()                    }});
+          Object.defineProperty(this, "cellSize",  {configurable: false, enumerable: false, get: function() { return getCellClientSize(getBoardClientSize()) }});
+          Object.defineProperty(this, "food",      {configurable: false, enumerable: false, get: function() { return food                                    }});
+          Object.defineProperty(this, "snakes",    {configurable: false, enumerable: false, get: function() { return snakes                                  }});
+          Object.defineProperty(this, "walls",     {configurable: false, enumerable: false, get: function() { return walls                                   }});
+
           if (false === ("object" === typeof context && (context instanceof CanvasRenderingContext2D || context instanceof OffscreenCanvasRenderingContext2D)))
           throw TypeError("`Board` requires a valid `HTMLCanvasElement` \"2d\" context");
 
-          Object.defineProperty(this, "backgroundColor",       {configurable: false, enumerable: false, get: function() { return backgroundColor       }, set: function(color)        { backgroundColor       = new Color(color)                                                                                                                                     }});
-          Object.defineProperty(this, "boardMargin",           {configurable: false, enumerable: false, get: function() { return boardMargin           }, set: function(margin)       { boardMargin           = +margin;           boardMargin          *= boardMargin    > 0                                                                                        }});
-          Object.defineProperty(this, "boardPadding",          {configurable: false, enumerable: false, get: function() { return boardPadding          }, set: function(padding)      { boardPadding          = +padding;          boardPadding         *= boardPadding   > 0                                                                                        }});
-          Object.defineProperty(this, "boardRadius",           {configurable: false, enumerable: false, get: function() { return boardRadius           }, set: function(radius)       { boardRadius           = +radius;           boardRadius          *= boardRadius    > 0                                                                                        }});
-          Object.defineProperty(this, "cellMargin",            {configurable: false, enumerable: false, get: function() { return cellMargin            }, set: function(margin)       { cellMargin            = +margin;           cellMargin           *= cellMargin     > 0                                                                                        }});
-          Object.defineProperty(this, "cellRadius",            {configurable: false, enumerable: false, get: function() { return cellRadius            }, set: function(radius)       { cellRadius            = +radius;           cellRadius           *= cellRadius     > 0                                                                                        }});
-          Object.defineProperty(this, "columnCount",           {configurable: false, enumerable: false, get: function() { return columnCount           }, set: function(count)        { columnCount           = +count        | 0; columnCount          *= columnCount    > 0; if (foodMaximumCount > board.size) board.foodMaximumCount = board.size                }});
-          Object.defineProperty(this, "context",               {configurable: false, enumerable: false, get: function() { return context               }, set: function(object)       { context               = "object" === typeof object && (object instanceof CanvasRenderingContext2D || object instanceof OffscreenCanvasRenderingContext2D) ? object : context }});
-          Object.defineProperty(this, "foodMaximumCount",      {configurable: false, enumerable: false, get: function() { return foodMaximumCount      }, set: function(count)        { foodMaximumCount      = +count        | 0; foodMaximumCount     *= foodMaximumCount > 0; resize()                                                                            }});
-          Object.defineProperty(this, "foodSpawnDelta",        {configurable: false, enumerable: false, get: function() { return foodSpawnDelta        }, set: function(delta)        { foodSpawnDelta        = +delta        | 0; foodSpawnDelta       *= foodSpawnDelta > 0                                                                                        }});
-          Object.defineProperty(this, "foodSpawnMinimumCount", {configurable: false, enumerable: false, get: function() { return foodSpawnMinimumCount }, set: function(count)        { foodSpawnMinimumCount = +count        | 0; foodSpawnMinimumCount = foodSpawnMinimumCount > 1 ? foodSpawnMinimumCount : 1                                                     }});
-          Object.defineProperty(this, "foodSpawnTimer",        {configurable: false, enumerable: false, get: function() { return foodSpawnTimer        }, set: function(milliseconds) { foodSpawnTimer        = +milliseconds | 0; foodSpawnTimer       *= foodSpawnTimer > 0                                                                                        }});
-          Object.defineProperty(this, "foregroundColor",       {configurable: false, enumerable: false, get: function() { return foregroundColor       }, set: function(color)        { foregroundColor       = new Color(color)                                                                                                                                     }});
-          Object.defineProperty(this, "rowCount",              {configurable: false, enumerable: false, get: function() { return rowCount              }, set: function(count)        { rowCount              = +count        | 0; rowCount             *= rowCount       > 0; if (foodMaximumCount > board.size) board.foodMaximumCount = board.size                }});
-          Object.defineProperty(this, "vegan",                 {configurable: false, enumerable: false, get: function() { return vegan                 }, set: function(option)       { vegan                 = !!option                                                                                                                                             }});
+          canvas = context.canvas;
+          this.snakes.add(new Snake(new SnakeHead(this, Math.trunc(columnCount / 2), Math.trunc(rowCount / 2))));
 
-          Object.defineProperty(this, "boardSize", {configurable: false, enumerable: false, get: function() { var boardSize = context.canvas.height < context.canvas.width ? context.canvas.height : context.canvas.width; return boardSize > (boardMargin * 2.0) ? boardSize - (boardMargin * 2.0) : 0.0 }});
-          Object.defineProperty(this, "cellSize",  {configurable: false, enumerable: false, get: function() { return (board.boardSize - (boardPadding * 2.0) - (boardRadius * 2.0)) / (columnCount > rowCount ? columnCount : rowCount)                                                                   }});
-          Object.defineProperty(this, "food",      {configurable: false, enumerable: false, get: function() { return food                                                                                                                                                                                 }});
-          Object.defineProperty(this, "snakes",    {configurable: false, enumerable: false, get: function() { return snakes                                                                                                                                                                               }});
-          Object.defineProperty(this, "walls",     {configurable: false, enumerable: false, get: function() { return walls                                                                                                                                                                                }});
-
-          this.context = context;
-
-          /* ... */
-          Object.preventExtensions(this);
-
-          this.snakes.add(new Snake(new Cell(this, Math.trunc(columnCount / 2), Math.trunc(rowCount / 2))));
-
+          // ...
           requestAnimationFrame(function render() {
-            var wallCount     = 0;
-            var snakeCount    = 0;
-            var foodSpawn     = food.length < foodSpawnMinimumCount;
-            var cellSize      = board.cellSize;
-            var cellSubMargin = cellMargin < cellSize ? cellMargin : cellSize;
-            var canvas        = context.canvas;
-            var boardSize     = board.boardSize;
-            var boardLeft     = (canvas.getBoundingClientRect().width  - boardSize) / 2.0;
-            var boardTop      = (canvas.getBoundingClientRect().height - boardSize) / 2.0;
+            var alias                    = coordinate => coordinate | 0; // ->> reduce non-intentioned anti-aliasing
+            var boardSize                = getBoardClientSize();
+            var canvasBoundingClientRect = canvas.getBoundingClientRect();
 
-            // ...
-            canvas.height                 = canvas.getBoundingClientRect().height;
-            canvas.width                  = canvas.getBoundingClientRect().width;
+            var boardLeft                    = (canvasBoundingClientRect.width  - boardSize) / 2.0;
+            var boardTop                     = (canvasBoundingClientRect.height - boardSize) / 2.0;
+            var cellSize                     = getCellClientSize(boardSize);
+            var cellSubMargin                = cellMargin < cellSize ? cellMargin : cellSize;
+            var contextImageSmoothingEnabled = context.imageSmoothingEnabled;
+            var contextImageSmoothingQuality = context.imageSmoothingQuality;
+            var foodCount                    = food.length;
+            var foodSpawnIncoming            = foodCount < foodSpawnMinimumCount;
+            var size                         = BOARD.size;
+            var snakeCount                   = (() => { var count = snakes.length; for (var index = count; index; ) count += snakes[--index].tail.length; return count })();
+            var wallCount                    = walls.length;
+
+            // Modification > ...
+            canvas.height                 = canvasBoundingClientRect.height;
+            canvas.width                  = canvasBoundingClientRect.width;
             context.imageSmoothingEnabled = false;
             context.imageSmoothingQuality = "low";
 
@@ -400,72 +429,58 @@
             context.fillStyle = backgroundColor;
 
             context.beginPath();
-              context.arc(boardLeft + boardRadius + (boardSize * 0), boardTop + boardRadius + (boardSize * 0), boardRadius, Math.PI * 0.0, Math.PI * 2.0);
-              context.arc(boardLeft - boardRadius + (boardSize * 1), boardTop + boardRadius + (boardSize * 0), boardRadius, Math.PI * 0.0, Math.PI * 2.0);
+              context.arc(alias(boardLeft + boardRadius + (boardSize * 0)), alias(boardTop + boardRadius + (boardSize * 0)), alias(boardRadius), Math.PI * 0.0, Math.PI * 2.0);
+              context.arc(alias(boardLeft - boardRadius + (boardSize * 1)), alias(boardTop + boardRadius + (boardSize * 0)), alias(boardRadius), Math.PI * 0.0, Math.PI * 2.0);
 
               context.fill();
             context.closePath();
 
             context.beginPath();
-              context.arc(boardLeft - boardRadius + (boardSize * 1), boardTop - boardRadius + (boardSize * 1), boardRadius, Math.PI * 0.0, Math.PI * 2.0);
-              context.arc(boardLeft + boardRadius + (boardSize * 0), boardTop - boardRadius + (boardSize * 1), boardRadius, Math.PI * 0.0, Math.PI * 2.0);
+              context.arc(alias(boardLeft - boardRadius + (boardSize * 1)), alias(boardTop - boardRadius + (boardSize * 1)), boardRadius, Math.PI * 0.0, Math.PI * 2.0);
+              context.arc(alias(boardLeft + boardRadius + (boardSize * 0)), alias(boardTop - boardRadius + (boardSize * 1)), boardRadius, Math.PI * 0.0, Math.PI * 2.0);
 
               context.fill();
             context.closePath();
 
-            context.fillRect(boardLeft - (boardRadius * 0.0) + (boardSize * 0), boardTop + (boardRadius * 1.0) + (boardSize * 0), boardRadius * 2.0, boardSize - (boardRadius * 2.0));
-            context.fillRect(boardLeft - (boardRadius * 2.0) + (boardSize * 1), boardTop + (boardRadius * 1.0) + (boardSize * 0), boardRadius * 2.0, boardSize - (boardRadius * 2.0));
-            context.fillRect(boardLeft + (boardRadius * 1.0) + (boardSize * 0), boardTop - (boardRadius * 0.0) + (boardSize * 0), boardSize - (boardRadius * 2.0), boardRadius * 2.0);
-            context.fillRect(boardLeft + (boardRadius * 1.0) + (boardSize * 0), boardTop - (boardRadius * 2.0) + (boardSize * 1), boardSize - (boardRadius * 2.0), boardRadius * 2.0);
+            context.fillRect(alias(boardLeft - (boardRadius * 0.0) + (boardSize * 0)), alias(boardTop + (boardRadius * 1.0) + (boardSize * 0)), alias(boardRadius * 2.0), alias(boardSize - (boardRadius * 2.0)));
+            context.fillRect(alias(boardLeft - (boardRadius * 2.0) + (boardSize * 1)), alias(boardTop + (boardRadius * 1.0) + (boardSize * 0)), alias(boardRadius * 2.0), alias(boardSize - (boardRadius * 2.0)));
+            context.fillRect(alias(boardLeft + (boardRadius * 1.0) + (boardSize * 0)), alias(boardTop - (boardRadius * 0.0) + (boardSize * 0)), alias(boardSize - (boardRadius * 2.0)), alias(boardRadius * 2.0));
+            context.fillRect(alias(boardLeft + (boardRadius * 1.0) + (boardSize * 0)), alias(boardTop - (boardRadius * 2.0) + (boardSize * 1)), alias(boardSize - (boardRadius * 2.0)), alias(boardRadius * 2.0));
 
-            context.fillRect(boardLeft + (boardRadius * 1.0), boardTop + (boardRadius * 1.0), boardSize - (boardRadius * 2.0), boardSize - (boardRadius * 2.0));
-
-            context.fillStyle = "rgba(0, 0, 0, 0.175)";
-
-            context.beginPath();
-              context.arc(boardLeft + (boardSize / 2.0), boardTop + (boardSize / 2.0), boardSize * 0.333333, Math.PI * 0.0, Math.PI * 2.0);
-              context.fill();
-            context.closePath();
+            context.fillRect(alias(boardLeft + (boardRadius * 1.0)), alias(boardTop + (boardRadius * 1.0)), alias(boardSize - (boardRadius * 2.0)), alias(boardSize - (boardRadius * 2.0)));
 
             // ... [Food]
-            for (var index = board.snakes.length; index--; )
-            snakeCount += board.snakes[index].tail.length + (null !== board.snakes[index].head);
+            foodSpawnIncoming = foodSpawnIncoming || foodSpawnTimer < new Date() - timestamp;
+            timestamp         = foodSpawnIncoming ? new Date() : timestamp;
 
-            if (foodSpawnTimer < new Date() - timestamp) {
-              foodSpawn = true;
-              timestamp = new Date()
-            }
+            if (foodSpawnIncoming && foodCount < Math.min(foodMaximumCount, size - (snakeCount + wallCount))) {
+              if (foodCount > foodSpawnMinimumCount + foodSpawnDelta)
+                food.length = foodSpawnMinimumCount + foodSpawnDelta;
 
-            if (foodSpawn && food.length < Math.min(foodMaximumCount, board.size - (snakeCount + wallCount))) {
-              if (food.length > foodSpawnMinimumCount + foodSpawnDelta)
-              food.length = foodSpawnMinimumCount + foodSpawnDelta;
-
-              while (food.length < foodSpawnMinimumCount + Math.trunc(Math.random() * foodSpawnDelta)) {
-                var column      = 0;
-                var unavailable = false;
-                var row         = 0;
+              while (foodCount < foodSpawnMinimumCount + Math.trunc(Math.random() * foodSpawnDelta)) {
+                var column = 0;
+                var row    = 0;
 
                 // ...
                 generate_coordinates:
-                for (var recentColumn = column, recentRow = row; ; ) {
+                while (true) {
                   column = Math.trunc(columnCount * Math.random());
                   row    = Math.trunc(rowCount    * Math.random());
 
-                  if (column === recentColumn && row === recentRow) {
-                    unavailable = true; // ->> ¯\_(ツ)_/¯
-                    break
-                  }
-
-                  for (var index = food.length; index--; ) {
+                  // ...
+                  for (var index = foodCount; index--; ) {
                     if (column === food[index].column && row === food[index].row)
                     continue generate_coordinates
                   }
 
+                  for (var index = wallCount; index--; ) {
+                    if (column === walls[index].column && row === walls[index].row)
+                    continue generate_coordinates
+                  }
+
                   for (var index = snakes.length; index--; ) {
-                    if (null !== snakes[index].head) {
-                      if (column === snakes[index].head.column && row === snakes[index].head.row)
-                      continue generate_coordinates
-                    }
+                    if (column === snakes[index].head.column && row === snakes[index].head.row)
+                    continue generate_coordinates;
 
                     for (var subindex = snakes[index].tail.length; subindex--; ) {
                       if (column === snakes[index].tail[subindex].column && row === snakes[index].tail[subindex].row)
@@ -476,8 +491,8 @@
                   break
                 }
 
-                if (false === unavailable && false === food.add(new Food(new Cell(board, column, row), (vegan ? herbivorousFood : carnivorousFood)[Math.trunc(Math.random() * (vegan ? herbivorousFood : carnivorousFood).length)])))
-                break
+                if (false === food.add(new Food(new Cell(BOARD, column, row), (vegan ? PLANTS : MEATS)[Math.trunc(Math.random() * (vegan ? PLANTS : MEATS).length)]))) break;
+                if (++foodCount === Math.min(foodMaximumCount, size - (snakeCount + wallCount))) break
               }
             }
 
@@ -499,48 +514,66 @@
               // ...
               context.fillStyle = (column + row) % 2 ? new Color(foregroundColor).darken(0x19, 0x19, 0x19) : foregroundColor;
 
-              for (var index = food.length; index--; ) {
-                if (column === food[index].column && row === food[index].row)
-                context.fillStyle = new Color(foregroundColor).lighten(0x99, 0x33, 0x00).darken(0x33, 0x33, 0x66)
+              generate_food_color:
+              for (var index = food.length; index--; )
+              if (column === food[index].column && row === food[index].row) {
+                context.fillStyle = new Color(foregroundColor).lighten(0x99, 0x33, 0x00).darken(0x33, 0x33, 0x66);
+                break generate_food_color
               }
 
+              generate_wall_color:
+              for (var index = walls.length; index--; )
+              if (column === walls[index].column && row === walls[index].row) {
+                context.fillStyle = new Color(backgroundColor).darken(0x06, 0x06, 0x06);
+                break generate_wall_color
+              }
+
+              generate_snake_color:
               for (var index = snakes.length; index--; ) {
-                for (var subindex = snakes[index].tail.length; subindex--; ) {
-                  if (column === snakes[index].tail[subindex].column && row === snakes[index].tail[subindex].row)
-                  context.fillStyle = snakes[index].tailColor
+                for (var subindex = snakes[index].tail.length; subindex--; )
+                if (column === snakes[index].tail[subindex].column && row === snakes[index].tail[subindex].row) {
+                  context.fillStyle = snakes[index].tailColor;
+                  break generate_snake_color
                 }
 
-                if (null !== snakes[index].head) {
-                  if (column === snakes[index].head.column && row === snakes[index].head.row)
-                  context.fillStyle = snakes[index].headColor
+                if (column === snakes[index].head.column && row === snakes[index].head.row) {
+                  context.fillStyle = snakes[index].headColor;
+                  break generate_snake_color
                 }
               }
 
               context.beginPath();
-                context.arc(cellSubLeft + cellTopLeftRadius  + (cellSubSize * 0), cellSubTop + cellTopLeftRadius  + (cellSubSize * 0), cellTopLeftRadius,  Math.PI * 0.0, Math.PI * 2.0);
-                context.arc(cellSubLeft - cellTopRightRadius + (cellSubSize * 1), cellSubTop + cellTopRightRadius + (cellSubSize * 0), cellTopRightRadius, Math.PI * 0.0, Math.PI * 2.0);
+                context.arc(alias(cellSubLeft + cellTopLeftRadius  + (cellSubSize * 0)), alias(cellSubTop + cellTopLeftRadius  + (cellSubSize * 0)), alias(cellTopLeftRadius),  Math.PI * 0.0, Math.PI * 2.0);
+                context.arc(alias(cellSubLeft - cellTopRightRadius + (cellSubSize * 1)), alias(cellSubTop + cellTopRightRadius + (cellSubSize * 0)), alias(cellTopRightRadius), Math.PI * 0.0, Math.PI * 2.0);
 
                 context.fill();
               context.closePath();
 
               context.beginPath();
-                context.arc(cellSubLeft - cellBottomRightRadius + (cellSubSize * 1), cellSubTop - cellBottomRightRadius + (cellSubSize * 1), cellBottomRightRadius, Math.PI * 0.0, Math.PI * 2.0);
-                context.arc(cellSubLeft + cellBottomLeftRadius  + (cellSubSize * 0), cellSubTop - cellBottomLeftRadius  + (cellSubSize * 1), cellBottomLeftRadius,  Math.PI * 0.0, Math.PI * 2.0);
+                context.arc(alias(cellSubLeft - cellBottomRightRadius + (cellSubSize * 1)), alias(cellSubTop - cellBottomRightRadius + (cellSubSize * 1)), alias(cellBottomRightRadius), Math.PI * 0.0, Math.PI * 2.0);
+                context.arc(alias(cellSubLeft + cellBottomLeftRadius  + (cellSubSize * 0)), alias(cellSubTop - cellBottomLeftRadius  + (cellSubSize * 1)), alias(cellBottomLeftRadius),  Math.PI * 0.0, Math.PI * 2.0);
 
                 context.fill();
               context.closePath();
 
-              context.fillRect(cellSubLeft - (Math.max(cellRadius, cellTopLeftRadius) * 0.0) + (cellSubSize * 0), cellSubTop + (Math.max(cellRadius, cellTopLeftRadius) * 1.0) + (cellSubSize * 0), cellRadius * 2.0, cellSubSize - (cellBottomLeftRadius + cellTopLeftRadius));
-              context.fillRect(cellSubLeft - (Math.min(cellRadius, cellTopRightRadius) * 2.0) + (cellSubSize * 1), cellSubTop + (Math.max(cellRadius, cellTopRightRadius) * 1.0) + (cellSubSize * 0), cellRadius * 2.0, cellSubSize - (cellBottomRightRadius + cellTopRightRadius));
-              context.fillRect(cellSubLeft + (Math.max(cellRadius, cellTopLeftRadius) * 1.0) + (cellSubSize * 0), cellSubTop - (Math.max(cellRadius, cellTopLeftRadius) * 0.0) + (cellSubSize * 0), cellSubSize - (cellTopLeftRadius + cellTopRightRadius), cellRadius * 2.0);
-              context.fillRect(cellSubLeft + (Math.max(cellRadius, cellBottomLeftRadius) * 1.0) + (cellSubSize * 0), cellSubTop - (Math.min(cellRadius, cellBottomLeftRadius) * 2.0) + (cellSubSize * 1), cellSubSize - (cellBottomLeftRadius + cellBottomRightRadius), cellRadius * 2.0);
+              context.fillRect(alias(cellSubLeft - (Math.max(cellRadius, cellTopLeftRadius)    * 0.0) + (cellSubSize * 0)), alias(cellSubTop + (Math.max(cellRadius, cellTopLeftRadius)    * 1.0) + (cellSubSize * 0)), alias(cellRadius * 2.0), alias(cellSubSize - (cellBottomLeftRadius  + cellTopLeftRadius)));
+              context.fillRect(alias(cellSubLeft - (Math.min(cellRadius, cellTopRightRadius)   * 2.0) + (cellSubSize * 1)), alias(cellSubTop + (Math.max(cellRadius, cellTopRightRadius)   * 1.0) + (cellSubSize * 0)), alias(cellRadius * 2.0), alias(cellSubSize - (cellBottomRightRadius + cellTopRightRadius)));
+              context.fillRect(alias(cellSubLeft + (Math.max(cellRadius, cellTopLeftRadius)    * 1.0) + (cellSubSize * 0)), alias(cellSubTop - (Math.max(cellRadius, cellTopLeftRadius)    * 0.0) + (cellSubSize * 0)), alias(cellSubSize - (cellTopLeftRadius    + cellTopRightRadius)),    alias(cellRadius * 2.0));
+              context.fillRect(alias(cellSubLeft + (Math.max(cellRadius, cellBottomLeftRadius) * 1.0) + (cellSubSize * 0)), alias(cellSubTop - (Math.min(cellRadius, cellBottomLeftRadius) * 2.0) + (cellSubSize * 1)), alias(cellSubSize - (cellBottomLeftRadius + cellBottomRightRadius)), alias(cellRadius * 2.0));
 
-              context.fillRect(cellSubLeft + (cellRadius * 1.0), cellSubTop + (cellRadius * 1.0), cellSubSize - (cellRadius * 2.0), cellSubSize - (cellRadius * 2.0))
+              context.fillRect(alias(cellSubLeft + (cellRadius * 1.0)), alias(cellSubTop + (cellRadius * 1.0)), alias(cellSubSize - (cellRadius * 2.0)), alias(cellSubSize - (cellRadius * 2.0)))
             }
+
+            // Modification > ...
+            context.imageSmoothingEnabled = contextImageSmoothingEnabled;
+            context.imageSmoothingQuality = contextImageSmoothingQuality;
 
             /* ... */
             requestAnimationFrame(render)
-          })
+          });
+
+          /* ... */
+          Object.preventExtensions(this)
         }
           Board.prototype = Object.freeze(Object.create(null, {
             backgroundColor      : {configurable: false, enumerable: false, value: Color.GREY,       writable: false},
@@ -552,6 +585,7 @@
             cellRadius           : {configurable: false, enumerable: false, value: 0,                writable: false},
             cellSize             : {configurable: false, enumerable: false, value: 0,                writable: false},
             columnCount          : {configurable: false, enumerable: false, value: 1,                writable: false},
+            constructor          : {configurable: false, enumerable: false, value: Board,            writable: false},
             context              : {configurable: false, enumerable: false, value: null,             writable: false},
             food                 : {configurable: false, enumerable: false, value: new Collection(), writable: false},
             foodMaximumCount     : {configurable: false, enumerable: false, value: 1,                writable: false},
@@ -600,7 +634,7 @@
           /* ... */
           requestAnimationFrame(render)
         }, 1)
-      } catch (error) { try { null() } catch (error) {
+      } catch (error) { throw error; try { null() } catch (error) {
         error.message = "Fix your JavaScript! \uD83D\uDC0D";
         throw error
       } };
