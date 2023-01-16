@@ -62,10 +62,10 @@
   </head>
 
   <body tabindex=-1>
-    <canvas id=canvas style="height: 100%; image-rendering: pixelated; width: 100%" tabindex=-1> </canvas>
+    <canvas id=canvas style="-ms-interpolation-mode: nearest-neighbor; height: 100%; image-rendering: -webkit-crisp-edges; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges; image-rendering: pixelated; width: 100%" tabindex=-1> </canvas>
 
-    <input autocomplete=off max=65 min=1 onchange="BOARD.columnCount = this.value; BOARD.foodMaximumCount = BOARD.size" oninput="BOARD.columnCount = this.value; BOARD.foodMaximumCount = BOARD.size" style="bottom: 3%; font-family: monospace; left : 10%; position: absolute; text-align: center; width: 33.333333%" tabindex=2 type=number step=1 value="15"/>
-    <input autocomplete=off max=65 min=1 onchange="BOARD.rowCount    = this.value; BOARD.foodMaximumCount = BOARD.size" oninput="BOARD.rowCount    = this.value; BOARD.foodMaximumCount = BOARD.size" style="bottom: 3%; font-family: monospace; right: 10%; position: absolute; text-align: center; width: 33.333333%" tabindex=2 type=number step=1 value="10"/>
+    <input autocomplete=off max=65 min=1 onchange="BOARD.columnCount = this.value; BOARD.foodMaximumCount = BOARD.cellMaximumCount" oninput="BOARD.columnCount = this.value; BOARD.foodMaximumCount = BOARD.cellMaximumCount" style="bottom: 3%; font-family: monospace; left : 10%; position: absolute; text-align: center; width: 33.333333%" tabindex=2 type=number step=1 value="15"/>
+    <input autocomplete=off max=65 min=1 onchange="BOARD.rowCount    = this.value; BOARD.foodMaximumCount = BOARD.cellMaximumCount" oninput="BOARD.rowCount    = this.value; BOARD.foodMaximumCount = BOARD.cellMaximumCount" style="bottom: 3%; font-family: monospace; right: 10%; position: absolute; text-align: center; width: 33.333333%" tabindex=2 type=number step=1 value="10"/>
     <input autocomplete=off onblur="this.style.opacity = 0.3" onclick=BOARD.spawn() onfocus="this.style.opacity = 1.0" onmouseleave="this.style.opacity = 0.3" onmouseover="this.style.opacity = 1.0" style="border-radius: 50px; bottom: 8%; cursor: pointer; font: 125% monospace; height: 50px; left: 0; margin: auto; opacity: 0.3; padding: 0; position: absolute; right: 0; transition: 100ms ease-in; width: 60%" tabindex=1 type=button value="spawn snek 🐍"/>
 
     <!-- Document Script -->
@@ -173,6 +173,7 @@
               length     : {configurable: false, enumerable: false, value: 0,          writable: false},
 
               add   : {configurable: false, enumerable: false, value: function add   (objects) { /* Do nothing... */                                                                                                                                                                                                            }, writable: false},
+              has   : {configurable: false, enumerable: false, value: function has   (object)  { for (var index = this.length; index; ) { if (object === this[--index]) return true } return false                                                                                                                              }, writable: false},
               remove: {configurable: false, enumerable: false, value: function remove(objects) { var length = this.length; for (var index = arguments.length; index--; ) { for (var subindex = length; subindex--; ) if (arguments[index] === this[subindex]) { this[subindex] = this[--length]; break } } this.length = length }, writable: false},
               splice: {configurable: false, enumerable: false, value: function splice()        { /* ->> Display like an `Array` in the Chrome Dev console */                                                                                                                                                                    }, writable: false}
             });
@@ -300,12 +301,12 @@
           var tailCollection = new Collection();
 
           // ...
-          Object.defineProperty(this, "board",     {configurable: false, enumerable: false, get: function() { return head.board     }, set: function(board)      { head.board = board                                                                                                                                                                                                              }});
-          Object.defineProperty(this, "direction", {configurable: false, enumerable: false, get: function() { return direction      }, set: function(option)     { switch (option) { case 0x0: case Snake.DOWN: case Snake.LEFT: case Snake.RIGHT: case Snake.UP: direction = option }                                                                                                             }});
-          Object.defineProperty(this, "head",      {configurable: false, enumerable: false, get: function() { return head           }, set: function(cell)       { if ("object" !== typeof cell) return; if (null === cell) { head = null; tailCollection = new Collection() } else if (cell instanceof Cell) { cell.owner = this; head = cell; tailCollection = new Collection(cell.board.size) } }});
-          Object.defineProperty(this, "headColor", {configurable: false, enumerable: false, get: function() { return headColor      }, set: function(color)      { headColor      = new Color(color)                                                                                                                                                                                               }});
-          Object.defineProperty(this, "tail",      {configurable: false, enumerable: false, get: function() { return tailCollection }, set: function(collection) { tailCollection = "object" === typeof collection && collection instanceof Collection ? collection : tailCollection                                                                                                               }});
-          Object.defineProperty(this, "tailColor", {configurable: false, enumerable: false, get: function() { return tailColor      }, set: function(color)      { tailColor      = new Color(color)                                                                                                                                                                                               }});
+          Object.defineProperty(this, "board",     {configurable: false, enumerable: false, get: function() { return head.board     }, set: function(board)      { head.board = board                                                                                                                                                                                                                          }});
+          Object.defineProperty(this, "direction", {configurable: false, enumerable: false, get: function() { return direction      }, set: function(option)     { switch (option) { case 0x0: case Snake.DOWN: case Snake.LEFT: case Snake.RIGHT: case Snake.UP: direction = option }                                                                                                                         }});
+          Object.defineProperty(this, "head",      {configurable: false, enumerable: false, get: function() { return head           }, set: function(cell)       { if ("object" !== typeof cell) return; if (null === cell) { head = null; tailCollection = new Collection() } else if (cell instanceof Cell) { cell.owner = this; head = cell; tailCollection = new Collection(cell.board.cellMaximumCount) } }});
+          Object.defineProperty(this, "headColor", {configurable: false, enumerable: false, get: function() { return headColor      }, set: function(color)      { headColor      = new Color(color)                                                                                                                                                                                                           }});
+          Object.defineProperty(this, "tail",      {configurable: false, enumerable: false, get: function() { return tailCollection }, set: function(collection) { tailCollection = "object" === typeof collection && collection instanceof Collection ? collection : tailCollection                                                                                                                           }});
+          Object.defineProperty(this, "tailColor", {configurable: false, enumerable: false, get: function() { return tailColor      }, set: function(color)      { tailColor      = new Color(color)                                                                                                                                                                                                           }});
 
           if (false === ("object" === typeof head && head instanceof Cell))
           throw new TypeError("`Snake`s must have a (single) `Cell` head");
@@ -336,7 +337,7 @@
           var MEATS  = [Food.BADGER, Food.CAMEL, Food.CAT, Food.CHIPMUNK, Food.COW, Food.DOG, Food.GIRAFFE, Food.GOAT, Food.HORSE, Food.MONKEY, Food.MOUSE, Food.PIG, Food.RABBIT, Food.RACCOON, Food.RAM, Food.RAT, Food.SHEEP, Food.SLOTH, Food.ZEBRA];
           var PLANTS = [Food.APPLE, Food.BANANA, Food.BLUEBERRIES, Food.CHERRIES, Food.COCONUT, Food.GRAPES, Food.KIWI, Food.MANGO, Food.MELON, Food.LEMON, Food.OLIVE, Food.PEACH, Food.PEAR, Food.PINEAPPLE, Food.ORANGE, Food.STRAWBERRY, Food.TANGERINE, Food.TOMATO, Food.WATERMELON];
 
-          var alias                 = coordinate => coordinate | 0; // ->> reduce non-intentioned anti-aliasing
+          var alias                 = coordinate => coordinate | 0; // ->> Reduce non-intentioned anti-aliasing
           var aliasSVGElement       = document.createElementNS("http://www.w3.org/2000/svg", "svg");
           var aliasSVGFilterID      = "alias";
           var aliasSVGURL           = null;
@@ -351,7 +352,7 @@
           var cellRadius            = Board.prototype.cellRadius;
           var columnCount           = Board.prototype.columnCount;
           var context               = canvas.getContext("2d", {alpha: true, desynchronized: true});
-          var food                  = new Collection(0);
+          var foods                 = new Collection(0);
           var foodMaximumCount      = Board.prototype.foodMaximumCount;
           var foodSpawnDelta        = Board.prototype.foodSpawnDelta;
           var foodSpawnMinimumCount = Board.prototype.foodSpawnMinimumCount;
@@ -359,8 +360,8 @@
           var foodSpawnTimestamp    = new Date();
           var foregroundColor       = new Color(Board.prototype.foregroundColor);
           var rowCount              = Board.prototype.rowCount;
-          var snakeMaximumCount     = 0;
-          var snakes                = new Collection(1);
+          var snakeMaximumCount     = 1;
+          var snakes                = new Collection(snakeMaximumCount);
           var vegan                 = Board.prototype.vegan;
           var walls                 = new Collection(0);
           var zoom                  = 1.0;
@@ -379,7 +380,7 @@
 
             // ...
             for (var node = boardCanvas; node.type === 0x1 /* --> Node.ELEMENT_NODE */; node = node.parentNode)
-            zoom *= (getComputedStyle(node) /* ->> preferably cached */).getPropertyValue("zoom");
+            zoom *= (getComputedStyle(node) /* ->> Preferably cached */).getPropertyValue("zoom");
 
             return zoom
           }
@@ -390,61 +391,76 @@
           }
 
           function resize() {
-            var recentFood   = food;
-            var recentSnakes = snakes;
-            var recentWalls  = walls;
-            var size         = BOARD.size;
-            var snakeCount   = (() => { var count = snakes.length; for (var index = count; index; ) count += snakes[--index].tail.length; return count })();
-            var wallCount    = walls.length;
+            var cellMaximumCount = BOARD.cellMaximumCount;
+            var foodCount        = 0;
+            var recentFoods      = foods;
+            var recentSnakes     = snakes;
+            var recentWalls      = walls;
+            var snakeCount       = BOARD.snakeCount;
+            var wallCount        = 0;
 
-            // ...
-            realias();
+            // ... ->> Reallocate `Wall` cells
+            walls = new Collection(BOARD.wallCount);
 
-            food   = new Collection(Math.min(foodMaximumCount, size - (snakeCount + wallCount)));
-            walls  = new Collection(BOARD.size);
-            snakes = size > snakeMaximumCount ? new Collection(snakeMaximumCount = size) : snakes;
+            for (var index = recentWalls.length; index; ) {
+              var wall = recentWalls[--index];
+              wallCount += (columnCount > wall.column && rowCount > wall.row) * walls.add(wall)
+            }
 
-            for (var index = recentFood  .length; index--; ) { if (columnCount > recentFood[index].column && rowCount > recentFood[index].row)         food  .add(recentFood  [index]) }
-            for (var index = recentWalls .length; index--; ) { /* if (columnCount > recentWalls[index].column && rowCount > recentWalls[index].row) */ walls .add(recentWalls [index]) }
-            for (var index = recentSnakes.length; index--; ) { if (recentSnakes === snakes) break;                                                     snakes.add(recentSnakes[index]) }
+            // ... ->> Reallocate visible `Food` cells
+            foodCount = Math.min(foodMaximumCount, cellMaximumCount - (snakeCount + wallCount));
+            foods     = new Collection(foodCount);
+
+            for (var index = recentFoods.length; index; ) {
+              var food = recentFoods[--index];
+              if (columnCount > food.column && rowCount > food.row) foods.add(food)
+            }
+
+            // ... ->> Reallocate `Snake` cells (and spawn `Wall`s from destroyed cells)
+            if (snakeMaximumCount < (cellMaximumCount - snakeCount)) {
+              snakes = new Collection(cellMaximumCount - snakeCount);
+              for (var index = recentSnakes.length; index; ) snakes.add(recentSnakes[--index])
+            }
 
             for (var index = snakes.length; index; ) {
-              var snake = snakes[--index];
+              var snake     = snakes[--index];
+              var snakeHead = snake.head;
 
-              if (columnCount <= snake.head.column || rowCount <= snake.head.row) {
-                snakes.remove(snake);
+              if (columnCount <= snakeHead.column || rowCount <= snakeHead.row) {
                 snake.tail.length = 0;
 
+                snakes.remove(snake);
                 walls.add(new Wall(BOARD, snake.head))
               }
             }
 
-            if (0 === snakes.length)
-            BOARD.spawn() // UPDATE (Lapys)
+            // ...
+            if (0 === snakes.length) BOARD.spawn();
+            realias()
           }
 
           // ...
           Object.defineProperty(this, "backgroundColor", {configurable: false, enumerable: false, get: function() { return backgroundColor }, set: function(color) { backgroundColor = new Color(color) }});
           Object.defineProperty(this, "foregroundColor", {configurable: false, enumerable: false, get: function() { return foregroundColor }, set: function(color) { foregroundColor = new Color(color) }});
 
-          Object.defineProperty(this, "boardMargin",           {configurable: false, enumerable: false, get: function() { return boardMargin           }, set: function(margin)       { boardMargin           = +margin;           boardMargin          *= boardMargin    > 0                                                                }});
-          Object.defineProperty(this, "boardPadding",          {configurable: false, enumerable: false, get: function() { return boardPadding          }, set: function(padding)      { boardPadding          = +padding;          boardPadding         *= boardPadding   > 0                                                                }});
-          Object.defineProperty(this, "boardRadius",           {configurable: false, enumerable: false, get: function() { return boardRadius           }, set: function(radius)       { boardRadius           = +radius;           boardRadius          *= boardRadius    > 0                                                                }});
-          Object.defineProperty(this, "cellMargin",            {configurable: false, enumerable: false, get: function() { return cellMargin            }, set: function(margin)       { cellMargin            = +margin;           cellMargin           *= cellMargin     > 0                                                                }});
-          Object.defineProperty(this, "cellRadius",            {configurable: false, enumerable: false, get: function() { return cellRadius            }, set: function(radius)       { cellRadius            = +radius;           cellRadius           *= cellRadius     > 0                                                                }});
-          Object.defineProperty(this, "columnCount",           {configurable: false, enumerable: false, get: function() { return columnCount           }, set: function(count)        { columnCount           = +count        | 0; columnCount          *= columnCount    > 0; this.foodMaximumCount = Math.min(foodMaximumCount, this.size) }});
-          Object.defineProperty(this, "foodSpawnDelta",        {configurable: false, enumerable: false, get: function() { return foodSpawnDelta        }, set: function(delta)        { foodSpawnDelta        = +delta        | 0; foodSpawnDelta       *= foodSpawnDelta > 0                                                                }});
-          Object.defineProperty(this, "foodSpawnMinimumCount", {configurable: false, enumerable: false, get: function() { return foodSpawnMinimumCount }, set: function(count)        { foodSpawnMinimumCount = +count        | 0; foodSpawnMinimumCount = foodSpawnMinimumCount > 1 ? foodSpawnMinimumCount : 1                             }});
-          Object.defineProperty(this, "foodSpawnTimer",        {configurable: false, enumerable: false, get: function() { return foodSpawnTimer        }, set: function(milliseconds) { foodSpawnTimer        = +milliseconds | 0; foodSpawnTimer       *= foodSpawnTimer > 0                                                                }});
-          Object.defineProperty(this, "rowCount",              {configurable: false, enumerable: false, get: function() { return rowCount              }, set: function(count)        { rowCount              = +count        | 0; rowCount             *= rowCount       > 0; this.foodMaximumCount = Math.min(foodMaximumCount, this.size) }});
-          Object.defineProperty(this, "vegan",                 {configurable: false, enumerable: false, get: function() { return vegan                 }, set: function(boolean)      { vegan                 = !!boolean                                                                                                                    }});
+          Object.defineProperty(this, "boardMargin",           {configurable: false, enumerable: false, get: function() { return boardMargin           }, set: function(margin)       { boardMargin           = +margin;           boardMargin          *= boardMargin    > 0                                                                            }});
+          Object.defineProperty(this, "boardPadding",          {configurable: false, enumerable: false, get: function() { return boardPadding          }, set: function(padding)      { boardPadding          = +padding;          boardPadding         *= boardPadding   > 0                                                                            }});
+          Object.defineProperty(this, "boardRadius",           {configurable: false, enumerable: false, get: function() { return boardRadius           }, set: function(radius)       { boardRadius           = +radius;           boardRadius          *= boardRadius    > 0                                                                            }});
+          Object.defineProperty(this, "cellMargin",            {configurable: false, enumerable: false, get: function() { return cellMargin            }, set: function(margin)       { cellMargin            = +margin;           cellMargin           *= cellMargin     > 0                                                                            }});
+          Object.defineProperty(this, "cellRadius",            {configurable: false, enumerable: false, get: function() { return cellRadius            }, set: function(radius)       { cellRadius            = +radius;           cellRadius           *= cellRadius     > 0                                                                            }});
+          Object.defineProperty(this, "columnCount",           {configurable: false, enumerable: false, get: function() { return columnCount           }, set: function(count)        { columnCount           = +count        | 0; columnCount          *= columnCount    > 0; this.foodMaximumCount = Math.min(foodMaximumCount, this.cellMaximumCount) }});
+          Object.defineProperty(this, "foodSpawnDelta",        {configurable: false, enumerable: false, get: function() { return foodSpawnDelta        }, set: function(delta)        { foodSpawnDelta        = +delta        | 0; foodSpawnDelta       *= foodSpawnDelta > 0                                                                            }});
+          Object.defineProperty(this, "foodSpawnMinimumCount", {configurable: false, enumerable: false, get: function() { return foodSpawnMinimumCount }, set: function(count)        { foodSpawnMinimumCount = +count        | 0; foodSpawnMinimumCount = foodSpawnMinimumCount > 1 ? foodSpawnMinimumCount : 1                                         }});
+          Object.defineProperty(this, "foodSpawnTimer",        {configurable: false, enumerable: false, get: function() { return foodSpawnTimer        }, set: function(milliseconds) { foodSpawnTimer        = +milliseconds | 0; foodSpawnTimer       *= foodSpawnTimer > 0                                                                            }});
+          Object.defineProperty(this, "rowCount",              {configurable: false, enumerable: false, get: function() { return rowCount              }, set: function(count)        { rowCount              = +count        | 0; rowCount             *= rowCount       > 0; this.foodMaximumCount = Math.min(foodMaximumCount, this.cellMaximumCount) }});
+          Object.defineProperty(this, "vegan",                 {configurable: false, enumerable: false, get: function() { return vegan                 }, set: function(boolean)      { vegan                 = !!boolean                                                                                                                                }});
 
           Object.defineProperty(this, "context",          {configurable: false, enumerable: false, get: function() { return boardContext     }, set: function(object) { if ("object" === typeof object && (object instanceof CanvasRenderingContext2D || object instanceof OffscreenCanvasRenderingContext2D)) { boardCanvas = object.canvas; boardContext = object } }});
           Object.defineProperty(this, "foodMaximumCount", {configurable: false, enumerable: false, get: function() { return foodMaximumCount }, set: function(count)  { var recentFoodMaximumCount = foodMaximumCount; foodMaximumCount = +count | 0; foodMaximumCount *= foodMaximumCount > 0; if (foodMaximumCount !== recentFoodMaximumCount) resize()             }});
 
           Object.defineProperty(this, "boardSize", {configurable: false, enumerable: false, get: function() { return getBoardClientSize()                    }});
           Object.defineProperty(this, "cellSize",  {configurable: false, enumerable: false, get: function() { return getCellClientSize(getBoardClientSize()) }});
-          Object.defineProperty(this, "food",      {configurable: false, enumerable: false, get: function() { return food                                    }});
+          Object.defineProperty(this, "food",      {configurable: false, enumerable: false, get: function() { return foods                                   }});
           Object.defineProperty(this, "snakes",    {configurable: false, enumerable: false, get: function() { return snakes                                  }});
           Object.defineProperty(this, "walls",     {configurable: false, enumerable: false, get: function() { return walls                                   }});
 
@@ -456,7 +472,7 @@
           this.spawn();
           aliasSVGElement
             .appendChild(document.createElementNS("http://www.w3.org/2000/svg", "defs"))
-            .appendChild((filter => {
+            .appendChild((function(filter) {
               filter.id = aliasSVGFilterID;
               filter.setAttributeNS(null, "height", "100%");
               filter.setAttributeNS(null, "width", "100%");
@@ -466,7 +482,7 @@
               return filter
             })(document.createElementNS("http://www.w3.org/2000/svg", "filter")))
             .appendChild(document.createElementNS("http://www.w3.org/2000/svg", "feComponentTransfer"))
-            .appendChild((filterElementFunctionAlpha => {
+            .appendChild((function(filterElementFunctionAlpha) {
               filterElementFunctionAlpha.setAttributeNS(null, "tableValues", "0 1");
               filterElementFunctionAlpha.setAttributeNS(null, "type", "discrete");
 
@@ -475,29 +491,32 @@
 
           // ...
           requestAnimationFrame(function render() {
-            var zoom                          = getClientZoom();
             var boardCanvasBoundingClientRect = boardCanvas.getBoundingClientRect();
-            var boardContextFilter            = boardContext.filter;
-            var boardSize                     = getBoardClientSize();
-            var boardTop                      = ((boardCanvasBoundingClientRect.height * zoom) - boardSize) / 2.0;
-            var boardLeft                     = ((boardCanvasBoundingClientRect.width  * zoom) - boardSize) / 2.0;
-            var cellSize                      = getCellClientSize(boardSize);
-            var cellLeft                      = boardLeft + boardRadius + boardPadding + ((cellMargin < cellSize ? cellMargin : cellSize) / 2.0) + (((boardSize - (boardPadding * 2.0) - (boardRadius * 2.0)) - (columnCount * cellSize)) / 2.0);
-            var cellTop                       = boardTop  + boardRadius + boardPadding + ((cellMargin < cellSize ? cellMargin : cellSize) / 2.0) + (((boardSize - (boardPadding * 2.0) - (boardRadius * 2.0)) - (rowCount    * cellSize)) / 2.0);
-            var foodCount                     = food.length;
-            var foodSpawnIncoming             = foodCount < foodSpawnMinimumCount;
-            var size                          = BOARD.size;
-            var snakeCount                    = (() => { var count = snakes.length; for (var index = count; index; ) count += snakes[--index].tail.length; return count })();
-            var wallCount                     = walls.length;
+            var zoom                          = getClientZoom();
+
+            boardCanvas.height = boardCanvasBoundingClientRect.height * zoom;
+            boardCanvas.width  = boardCanvasBoundingClientRect.width  * zoom;
+            canvas.height      = alias(boardCanvas.height);
+            canvas.width       = alias(boardCanvas.width);
+
+            /* ... */
+            var boardContextFilter = boardContext.filter;
+            var boardSize          = getBoardClientSize();
+            var boardTop           = (canvas.height - boardSize) / 2.0;
+            var boardLeft          = (canvas.width  - boardSize) / 2.0;
+            var cellSize           = getCellClientSize(boardSize);
+            var cellLeft           = boardLeft + boardRadius + boardPadding + ((cellMargin < cellSize ? cellMargin : cellSize) / 2.0) + (((boardSize - (boardPadding * 2.0) - (boardRadius * 2.0)) - (columnCount * cellSize)) / 2.0);
+            var cellTop            = boardTop  + boardRadius + boardPadding + ((cellMargin < cellSize ? cellMargin : cellSize) / 2.0) + (((boardSize - (boardPadding * 2.0) - (boardRadius * 2.0)) - (rowCount    * cellSize)) / 2.0);
+            var foodCount          = foods.length;
+            var foodSpawnIncoming  = foodCount < foodSpawnMinimumCount;
+            var size               = BOARD.cellMaximumCount;
+            var snakeCount         = (() => { var count = snakes.length; for (var index = count; index; ) count += snakes[--index].tail.length; return count })();
+            var wallCount          = walls.length;
 
             // Modification > ...
             if (null === aliasSVGURL) realias();
 
-            boardCanvas.height            = boardCanvasBoundingClientRect.height * zoom;
-            boardCanvas.width             = boardCanvasBoundingClientRect.width  * zoom;
-            canvas.height                 = alias(boardCanvas.height);
-            canvas.width                  = alias(boardCanvas.width);
-            context.font                  = (getComputedStyle(boardCanvas) /* ->> preferably cached */).getPropertyValue("font-size") + " monospace";
+            context.font                  = (getComputedStyle(boardCanvas) /* ->> Preferably cached */).getPropertyValue("font-size") + " monospace";
             context.imageSmoothingEnabled = false;
             context.imageSmoothingQuality = "low";
 
@@ -535,7 +554,7 @@
 
             if (foodSpawnIncoming && foodCount < Math.min(foodMaximumCount, size - (snakeCount + wallCount))) {
               if (foodCount > foodSpawnMinimumCount + foodSpawnDelta)
-                food.length = foodSpawnMinimumCount + foodSpawnDelta;
+                foods.length = foodSpawnMinimumCount + foodSpawnDelta;
 
               while (foodCount < foodSpawnMinimumCount + Math.trunc(Math.random() * foodSpawnDelta)) {
                 var column = 0;
@@ -549,7 +568,7 @@
 
                   // ...
                   for (var index = foodCount; index--; ) {
-                    if (column === food[index].column && row === food[index].row)
+                    if (column === foods[index].column && row === foods[index].row)
                     continue generate_coordinates
                   }
 
@@ -571,7 +590,7 @@
                   break
                 }
 
-                if (false === food.add(new Food(new Cell(BOARD, column, row), (vegan ? PLANTS : MEATS)[Math.trunc(Math.random() * (vegan ? PLANTS : MEATS).length)]))) break;
+                if (false === foods.add(new Food(new Cell(BOARD, column, row), (vegan ? PLANTS : MEATS)[Math.trunc(Math.random() * (vegan ? PLANTS : MEATS).length)]))) break;
                 if (++foodCount === Math.min(foodMaximumCount, size - (snakeCount + wallCount))) break
               }
             }
@@ -591,8 +610,8 @@
               context.fillStyle = (column + row) % 2 ? new Color(foregroundColor).darken(0x19, 0x19, 0x19) : foregroundColor;
 
               generate_food_color:
-              for (var index = food.length; index--; )
-              if (column === food[index].column && row === food[index].row) {
+              for (var index = foods.length; index--; )
+              if (column === foods[index].column && row === foods[index].row) {
                 context.fillStyle = new Color(foregroundColor).lighten(0x99, 0x33, 0x00).darken(0x33, 0x33, 0x66);
                 break generate_food_color
               }
@@ -703,60 +722,82 @@
             vegan                : {configurable: false, enumerable: false, value: true,             writable: false},
             walls                : {configurable: false, enumerable: false, value: new Collection(), writable: false},
 
-            size: {configurable: false, enumerable: false, get: function() { return this.columnCount * this.rowCount }},
+            cellCount       : {configurable: false, enumerable: false, get: function() { return this.foodCount + this.snakeCount + this.wallCount                                                                                 }},
+            cellMaximumCount: {configurable: false, enumerable: false, get: function() { return this.columnCount * this.rowCount                                                                                                  }},
+            foodCount       : {configurable: false, enumerable: false, get: function() { return this.food.length                                                                                                                  }},
+            snakeCount      : {configurable: false, enumerable: false, get: function() { var snakes = this.snakes; var count = snakes.length; for (var index = count; index; ) count += snakes[--index].tail.length; return count }},
+            wallCount       : {configurable: false, enumerable: false, get: function() { return this.walls.length                                                                                                                 }},
 
             spawn: {configurable: false, enumerable: false, value: function spawn() {
-              var food       = this.food;
-              var foodCount  = food.length;
-              var column     = -1;
-              var row        = -1;
-              var snake      = new Snake(new SnakeHead(this));
-              var snakes     = this.snakes;
-              var snakeCount = (() => { var count = snakes.length; for (var index = count; index; ) count += snakes[--index].tail.length; return count })();
-              var walls      = this.walls;
-              var wallCount  = walls.length;
+              var cellCount        = this.cellCount;
+              var cellMaximumCount = this.cellMaximumCount;
 
               // ...
-              if (this.size <= foodCount + snakeCount + wallCount)
-              return false;
+              if (cellCount < cellMaximumCount) {
+                var columnCount = this.columnCount;
+                var foods       = this.food;
+                var rowCount    = this.rowCount;
+                var snake       = new Snake(new SnakeHead(this, Math.trunc(columnCount / 2), Math.trunc(rowCount / 2)));
+                var snakeHead   = snake.head;
+                var snakes      = this.snakes;
+                var walls       = this.walls;
 
-              generate_coordinates:
-              while (true) {
-                column = column !== -1 ? Math.trunc(this.columnCount * Math.random()) : Math.trunc(this.columnCount / 2);
-                row    = row    !== -1 ? Math.trunc(this.rowCount    * Math.random()) : Math.trunc(this.rowCount    / 2);
-
-                for (var index = food.length; index--; ) {
-                  if (column === food[index].column && row === food[index].row)
-                  continue generate_coordinates
-                }
-
-                for (var index = walls.length; index--; ) {
-                  if (column === walls[index].column && row === walls[index].row)
-                  continue generate_coordinates
-                }
-
-                for (var index = snakes.length; index--; ) {
-                  if (column === snakes[index].head.column && row === snakes[index].head.row)
-                  continue generate_coordinates;
-
-                  for (var subindex = snakes[index].tail.length; subindex--; ) {
-                    if (column === snakes[index].tail[subindex].column && row === snakes[index].tail[subindex].row)
-                    continue generate_coordinates
+                // ...
+                generate_coordinates:
+                for (var generated = new Collection(cellMaximumCount), regenerate = false; ; regenerate = true) {
+                  if (regenerate) {
+                    snakeHead.column = Math.trunc(columnCount * Math.random());
+                    snakeHead.row    = Math.trunc(rowCount    * Math.random())
                   }
+
+                  // ...
+                  for (var index = foods.length; index--; ) {
+                    if (snakeHead.column === foods[index].column && snakeHead.row === foods[index].row) {
+                      // if (generated.has(foods[index].cell)) {
+                      //   if (false === generated.add(foods[index].cell))
+                      //   return false
+                      // }
+                      console.log("FOOD");
+                      continue generate_coordinates
+                    }
+                  }
+
+                  for (var index = walls.length; index--; ) {
+                    if (snakeHead.column === walls[index].column && snakeHead.row === walls[index].row) {
+                      console.log("WALL");
+                      continue generate_coordinates
+                    }
+                  }
+
+                  for (var index = snakes.length; index--; ) {
+                    if (snakeHead.column === snakes[index].head.column && snakeHead.row === snakes[index].head.row) {
+                      console.log("SNAKE HEAD");
+                      continue generate_coordinates;
+                    }
+
+                    for (var subindex = snakes[index].tail.length; subindex--; ) {
+                      if (snakeHead.column === snakes[index].tail[subindex].column && snakeHead.row === snakes[index].tail[subindex].row) {
+                        console.log("SNAKE TAIL");
+                        continue generate_coordinates
+                      }
+                    }
+                  }
+
+                  break
                 }
 
-                break
+                console.log("...");
+
+                if (snakes.add(snake)) {
+                  console.log("[[added]]");
+                  snake.headColor = new Color(Math.trunc(Math.random() * 0xFF), Math.trunc(Math.random() * 0xFF), Math.trunc(Math.random() * 0xFF));
+                  snake.tailColor = new Color(snake.headColor).darken(0x13, 0x13, 0x13);
+
+                  return true
+                }
               }
 
-              if (snakes.add(snake)) {
-                snake.head.column = column;
-                snake.head.row    = row;
-                snake.headColor   = new Color(Math.trunc(Math.random() * 0xFF), Math.trunc(Math.random() * 0xFF), Math.trunc(Math.random() * 0xFF));
-                snake.tailColor   = new Color(snake.headColor).darken(0x13, 0x13, 0x13);
-
-                return true
-              }
-
+              console.log("[[failed]]");
               return false
             }, writable: false}
           }));
