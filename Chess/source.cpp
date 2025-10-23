@@ -891,15 +891,15 @@ LRESULT CALLBACK UPDATE(HWND const windowHandle, UINT const message, WPARAM cons
             ::CloseTouchInputHandle(touchInputHandle);
 
             // ...
-            input.mi.dwExtraInfo = NULL;
-            input.mi.dwFlags     = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_LEFTDOWN;
-            input.mi.dx          = TOUCH_COORD_TO_PIXEL(touchInputs -> x) - Window::LEFT;
-            input.mi.dy          = TOUCH_COORD_TO_PIXEL(touchInputs -> y) - Window::TOP;
-            input.mi.mouseData   = 0u;
-            input.mi.time        = 0u;
-            input.type           = INPUT_MOUSE;
+            input -> mi.dwExtraInfo = 0x00uLL;
+            input -> mi.dwFlags     = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_LEFTDOWN;
+            input -> mi.dx          = TOUCH_COORD_TO_PIXEL(touchInputs -> x) - Window::LEFT;
+            input -> mi.dy          = TOUCH_COORD_TO_PIXEL(touchInputs -> y) - Window::TOP;
+            input -> mi.mouseData   = 0u;
+            input -> mi.time        = 0u;
+            input -> type           = INPUT_MOUSE;
 
-            ::SendInput(1u, static_cast<LPINPUT>(&input), sizeof(INPUT));
+            ::SendInput(1u, static_cast<LPINPUT>(input), sizeof(INPUT));
           } return 0x0L;
         #endif
 
